@@ -248,6 +248,9 @@ textarea:focus { outline: none; border-color: var(--primary); }
 .sema-dot { width: 12px; height: 12px; border-radius: 50%; opacity: .25; transition: opacity .3s; }
 .sema-dot.active { opacity: 1; }
 .sema-lbl { font-size: 0.72rem; opacity: .7; margin-left: 4px; }
+.cdi-metric-btn { font-size: 0.75rem; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(0,0,0,.15); background: transparent; color: var(--muted); cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+.cdi-metric-btn:hover { background: rgba(0,0,0,.04); }
+.cdi-metric-btn.active { background: var(--primary, #2563eb); color: #fff; border-color: var(--primary, #2563eb); }
 
 /* ── Barras consenso ─────────────────────────────────────── */
 .bar-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
@@ -818,14 +821,45 @@ function renderCDI(cd) {
         </div>
       </div>
     </div>
-    <details style="margin-top:8px">
+    <details style="margin-top:8px" id="cdi-metric-details">
       <summary>Detalles técnicos del CDI</summary>
       <div class="detail-body">
-        det(M) = ${cdi.determinante} &nbsp;·&nbsp;
-        Entropía Shannon = ${cdi.entropia} &nbsp;·&nbsp;
-        ${cd.embedding_disponible ? "✓ Embeddings semánticos activos (OpenAI)" : "Modo léxico TF-IDF (sin clave OpenAI)"}
+        <div class="cdi-metric-selector" style="display:flex; gap:6px; margin:8px 0; flex-wrap:wrap">
+          <button type="button" class="cdi-metric-btn active" data-metric="geometric">Geométrica (principal)</button>
+          <button type="button" class="cdi-metric-btn" data-metric="mean_dissent">Disenso medio</button>
+          <button type="button" class="cdi-metric-btn" data-metric="entropy">Entropía</button>
+        </div>
+        <div id="cdi-metric-body" style="font-size:0.85rem; line-height:1.5">
+          <div><strong>cdi_geometric</strong> = |det(M)|^(1/n) = <code>${cdi.cdi_geometric ?? "—"}</code>
+            <div style="color:var(--muted)">Media geométrica de los valores singulares. Normalizada y comparable entre ensembles de distinto tamaño.</div></div>
+        </div>
+        <hr style="margin:10px 0; border:none; border-top:1px solid rgba(0,0,0,.08)">
+        <div style="font-size:0.78rem; color:var(--muted)">
+          det(M) = ${cdi.determinante ?? "—"} &nbsp;·&nbsp;
+          n = ${cdi.n_modelos ?? "—"} &nbsp;·&nbsp;
+          cdi_det_raw (legacy) = ${cdi.cdi_det_raw ?? "—"} &nbsp;·&nbsp;
+          ${cd.embedding_disponible ? "✓ Embeddings semánticos activos (OpenAI)" : "Modo léxico TF-IDF (sin clave OpenAI)"}
+        </div>
       </div>
     </details>`;
+
+  // Selector de métrica (geometric / mean_dissent / entropy) dentro de los detalles.
+  const metricBodies = {
+    geometric: `<div><strong>cdi_geometric</strong> = |det(M)|^(1/n) = <code>${cdi.cdi_geometric ?? "—"}</code>
+      <div style="color:var(--muted)">Media geométrica de los valores singulares. Normalizada y comparable entre ensembles de distinto tamaño. Es la métrica principal y la que gobierna el banner semafórico.</div></div>`,
+    mean_dissent: `<div><strong>cdi_mean_dissent</strong> = 1 − mean(off-diagonal) = <code>${cdi.cdi_mean_dissent ?? "—"}</code>
+      <div style="color:var(--muted)">Disenso medio par-a-par. Interpretación directa: 0 = todas las respuestas idénticas, 1 = ortogonales.</div></div>`,
+    entropy: `<div><strong>cdi_entropy</strong> = H(off-diagonal norm.) = <code>${cdi.cdi_entropy ?? "—"}</code>
+      <div style="color:var(--muted)">Entropía de Shannon sobre las similitudes normalizadas. Capta si el disenso está disperso o concentrado en pocos pares.</div></div>`
+  };
+  document.querySelectorAll(".cdi-metric-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".cdi-metric-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const body = document.getElementById("cdi-metric-body");
+      if (body) body.innerHTML = metricBodies[btn.dataset.metric] || "";
+    });
+  });
 
   // Divergencia de capas
   const divSec = document.getElementById("divergencia-section");
