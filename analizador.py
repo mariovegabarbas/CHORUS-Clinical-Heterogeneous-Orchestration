@@ -231,8 +231,22 @@ def calcular_consensos_individuales(matriz_sim, nombres):
 # ── Voz Solista (SOLO) ────────────────────────────────────────────────────────
 
 def identificar_solo(consensos_ind, resultados_raw):
-    validos = [c for c in consensos_ind if c["consenso_individual"] > 0]
+    """
+    Expone el modelo con menor consenso individual como Voz Solista (SOLO).
+
+    El filtro acepta `consenso_individual >= 0` (no `> 0`): un modelo con
+    consenso exactamente cero es ortogonal al resto del ensemble y
+    constituye el SOLO canónico — estructuralmente es el caso más
+    interesante y justamente el que el sistema está diseñado para no
+    silenciar. Solo se devuelve None en el caso degenerado en el que
+    TODOS los modelos son mutuamente ortogonales (consenso == 0 en todos):
+    ahí no hay SOLO distinguible porque cada uno es tan disidente como los
+    demás.
+    """
+    validos = [c for c in consensos_ind if c["consenso_individual"] >= 0]
     if not validos:
+        return None
+    if all(c["consenso_individual"] == 0 for c in validos):
         return None
     minoritario = validos[-1]
     texto = next((r.get("response","") for r in resultados_raw
@@ -382,7 +396,7 @@ def dataAnalisis_interno(resultados_ensamblador):
                     for j in range(len(m_principal)) if i != j]
         cg = round(float(np.mean(vals_off)), 4) if vals_off else 0.5
 
-        perspectiva_min = identificar_solo(consensos_ind, validos)
+        solo_voz = identificar_solo(consensos_ind, validos)
         divergencia = calcular_divergencia_capas(m_tfidf, m_embed)
 
         n_top = max(1, len(consensos_ind) * 2 // 3)
@@ -411,7 +425,7 @@ def dataAnalisis_interno(resultados_ensamblador):
             "indices_filtrados": list(range(len(validos))),
             "nombres_filtrados": nombres,
             "cdi": cdi_info,
-            "solo": perspectiva_min,
+            "solo": solo_voz,
             "divergencia_capas": divergencia,
             "embedding_disponible": m_embed is not None,
             "respuesta_fusionada": fusionada,

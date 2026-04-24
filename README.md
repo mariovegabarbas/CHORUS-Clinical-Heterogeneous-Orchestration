@@ -147,7 +147,13 @@ Los umbrales y colores se aplican sobre `cdi_geometric`:
 
 ### Voz Solista (SOLO)
 
-El modelo con menor índice de consenso individual (suma de sus similitudes con el resto del ensemble) se expone de forma explícita, con su respuesta completa inalterada. La Voz Solista (SOLO) no es un error: es una hipótesis diagnóstica alternativa que merece evaluación clínica independiente, especialmente en casos de CDI alto o máximo.
+El modelo con menor índice de consenso individual (media de sus similitudes con el resto del ensemble) se expone de forma explícita, con su respuesta completa inalterada. La Voz Solista (SOLO) no es un error: es una hipótesis diagnóstica alternativa que merece evaluación clínica independiente, especialmente en casos de CDI alto o máximo.
+
+#### SOLO canónico (consenso individual = 0)
+
+El caso estructuralmente más interesante es el del modelo con consenso individual **exactamente cero**: semánticamente ortogonal al resto del ensemble. Ese modelo es el *SOLO canónico* en la narrativa del paper y es, justamente, el fenómeno que el sistema está diseñado para no silenciar. Por eso el filtro interno acepta `consenso_individual >= 0` (no `> 0`).
+
+La única excepción es el caso degenerado en el que **todos** los modelos son mutuamente ortogonales (todos los consensos son cero): ahí no existe un SOLO distinguible — cada modelo es tan disidente como los demás — y la función devuelve `None`.
 
 ### Doble capa de similitud
 
