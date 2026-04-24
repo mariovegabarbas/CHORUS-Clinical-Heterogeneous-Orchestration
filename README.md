@@ -1,4 +1,4 @@
-# CRML — Clinical Reasoning Multi-LLM
+# CHORUS — Clinical Heterogeneous Orchestration
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=flat-square&logo=flask&logoColor=white)
@@ -24,13 +24,15 @@
 10. [Aviso clínico](#aviso-clínico)
 11. [Licencia](#licencia)
 
+
+
 ---
 
 ## Motivación
 
-Cuando varios LLMs analizan un mismo caso clínico, sus respuestas rara vez coinciden plenamente. El enfoque habitual consiste en promediar o ignorar esas discrepancias. **CRML invierte esa lógica**: el desacuerdo entre modelos no es un artefacto que suprimir, sino la señal más informativa que el sistema puede producir.
+Cuando varios LLMs analizan un mismo caso clínico, sus respuestas rara vez coinciden plenamente. El enfoque habitual consiste en promediar o ignorar esas discrepancias. **CHORUS invierte esa lógica**: el desacuerdo entre modelos no es un artefacto que suprimir, sino la señal más informativa que el sistema puede producir.
 
-Esta filosofía se fundamenta en el trabajo **MEDLEY** (Abtahi, Astaraki & Seoane, 2025), que demuestra cómo el sesgo y la imperfección de los modelos individuales pueden aprovecharse constructivamente en aplicaciones médicas. CRML extiende ese marco al dominio de la psicoterapia, donde la incertidumbre diagnóstica no indica fallo del sistema sino la naturaleza inherentemente compleja de la condición humana.
+Esta filosofía se fundamenta en el trabajo **MEDLEY** (Abtahi, Astaraki & Seoane, 2025), que demuestra cómo el sesgo y la imperfección de los modelos individuales pueden aprovecharse constructivamente en aplicaciones médicas. CHORUS extiende ese marco al dominio de la psicoterapia, donde la incertidumbre diagnóstica no indica fallo del sistema sino la naturaleza inherentemente compleja de la condición humana.
 
 ---
 
@@ -68,7 +70,7 @@ Esta filosofía se fundamenta en el trabajo **MEDLEY** (Abtahi, Astaraki & Seoan
 │              └──────────────┬─────────────────┘                 │
 │                             │                                   │
 │                    CDI = 1 − det(M_sim)                         │
-│             Perspectiva Minoritaria Destacada (PMD)             │
+│                      Voz Solista (SOLO)                         │
 └────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
@@ -85,7 +87,7 @@ Esta filosofía se fundamenta en el trabajo **MEDLEY** (Abtahi, Astaraki & Seoan
 │   Web (Flask + HTML/JS)          CLI (main.py)                  │
 │   · Banner CDI semafórico        · Salida estructurada          │
 │   · Mapa consenso-disenso        · JSON exportable              │
-│   · Tarjeta PMD destacada                                       │
+│   · Tarjeta SOLO destacada                                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -93,15 +95,15 @@ Esta filosofía se fundamenta en el trabajo **MEDLEY** (Abtahi, Astaraki & Seoan
 
 ## Contribuciones originales
 
-CRML no es una reimplementación de MEDLEY, sino una extensión con contribuciones metodológicas propias orientadas al entorno clínico:
+CHORUS no es una reimplementación de MEDLEY, sino una extensión con contribuciones metodológicas propias orientadas al entorno clínico:
 
-| Componente | MEDLEY (base) | CRML (extensión) |
+| Componente | MEDLEY (base) | CHORUS (extensión) |
 |---|---|---|
 | **Estrategia de ensemble** | Múltiples modelos médicos | Múltiples LLMs heterogéneos (OpenRouter) |
 | **Tratamiento del sesgo** | Aprovechar el sesgo individual | Cuantificar y exponer el disenso como señal |
 | **Métrica de diversidad** | No definida formalmente | **CDI = 1 − det(M_sim)** (contribución propia) |
 | **Capas de similitud** | — | TF-IDF (léxica) + embeddings (semántica) simultáneas |
-| **Perspectiva minoritaria** | — | **PMD**: extracción y exposición explícita del outlier diagnóstico |
+| **Voz Solista** | — | **SOLO**: extracción y exposición explícita de la Voz Solista |
 | **Fusión** | Votación / promedio | Síntesis instructada para **preservar** las divergencias clínicas |
 | **Dominio** | Diagnóstico médico general | Psicoterapia y razonamiento clínico en salud mental |
 
@@ -119,12 +121,12 @@ donde `M_sim` es la matriz de similitud entre todas las respuestas del ensemble.
 |---|---|---|---|
 | **Bajo** | 0.00 – 0.25 | 🟢 Verde | Consenso amplio. Los modelos convergen en una hipótesis diagnóstica similar. La síntesis es fiable. |
 | **Moderado** | 0.26 – 0.50 | 🟡 Amarillo | Divergencia notable. Existen matices de interpretación. Se recomienda revisar las perspectivas individuales. |
-| **Alto** | 0.51 – 0.75 | 🟠 Naranja | Desacuerdo sustancial. El caso presenta complejidad diagnóstica real. La PMD merece evaluación independiente. |
+| **Alto** | 0.51 – 0.75 | 🟠 Naranja | Desacuerdo sustancial. El caso presenta complejidad diagnóstica real. La Voz Solista (SOLO) merece evaluación independiente. |
 | **Máximo** | 0.76 – 1.00 | 🔴 Rojo | Disenso extremo. El ensemble no converge. Indicador de alta ambigüedad clínica o presentación atípica. |
 
-### Perspectiva Minoritaria Destacada (PMD)
+### Voz Solista (SOLO)
 
-El modelo con menor índice de consenso individual (suma de sus similitudes con el resto del ensemble) se expone de forma explícita, con su respuesta completa inalterada. La PMD no es un error: es una hipótesis diagnóstica alternativa que merece evaluación clínica independiente, especialmente en casos de CDI alto o máximo.
+El modelo con menor índice de consenso individual (suma de sus similitudes con el resto del ensemble) se expone de forma explícita, con su respuesta completa inalterada. La Voz Solista (SOLO) no es un error: es una hipótesis diagnóstica alternativa que merece evaluación clínica independiente, especialmente en casos de CDI alto o máximo.
 
 ### Doble capa de similitud
 
@@ -138,8 +140,8 @@ La divergencia entre la matriz léxica (TF-IDF) y la semántica (embeddings) act
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/mariovegabarbas/CRML-Clinical-Reasoning-Multi-LLM-framework
-cd CRML-Clinical-Reasoning-Multi-LLM-framework
+git clone https://github.com/mariovegabarbas/CHORUS-Clinical-Heterogeneous-Orchestration
+cd CHORUS-Clinical-Heterogeneous-Orchestration
 
 # 2. Instalar dependencias
 pip install flask flask-cors scikit-learn numpy requests aiohttp openai python-dotenv
@@ -168,7 +170,7 @@ Abre [http://localhost:8282](http://localhost:8282) en tu navegador.
    - **Banner CDI** con código de color y nivel de disenso.
    - **Mapa de consenso-disenso** entre modelos.
    - **Respuestas individuales** de cada LLM.
-   - **Tarjeta PMD** con la perspectiva minoritaria destacada.
+   - **Tarjeta SOLO** con la Voz Solista.
    - **Síntesis fusionada** con los puntos de deliberación clínica.
 
 ### Interfaz CLI
@@ -177,23 +179,27 @@ Abre [http://localhost:8282](http://localhost:8282) en tu navegador.
 python main.py
 ```
 
-La salida estructurada incluye el CDI, las respuestas individuales, la PMD y la síntesis, en formato texto con opción de exportación JSON.
+La salida estructurada incluye el CDI, las respuestas individuales, la Voz Solista (SOLO) y la síntesis, en formato texto con opción de exportación JSON.
 
 ---
 
 ## Estructura del proyecto
 
 ```
-CRML-v2/
+CHORUS/
 ├── app.py                   # Backend Flask — API REST (puerto 8282)
 ├── main.py                  # Interfaz de línea de comandos
 ├── analizador.py            # Cálculo del CDI, consenso, similitud y fusión
 ├── cargador_modelos.py      # Carga dinámica de modelos desde modelos.json
 ├── modelos.json             # Catálogo de modelos disponibles (OpenRouter)
 ├── Ensambladores/
+│   ├── __init__.py
 │   └── ensamblador_LLM.py   # Consultas asíncronas al ensemble de LLMs
-└── static/
-    └── index.html           # Frontend web (HTML/CSS/JS vanilla)
+├── static/
+│   └── index.html           # Frontend web (HTML/CSS/JS vanilla)
+└── resultados/              # Salida de análisis (generado en ejecución)
+    ├── ensamble_YYYYMMDD_HHMMSS.json        # Respuestas + CDI + SOLO + síntesis
+    └── ensamble_YYYYMMDD_HHMMSS.meta.json   # Metadatos del análisis
 ```
 
 ---
@@ -215,6 +221,7 @@ CRML-v2/
 ```
 OPENAI_API_KEY        — Fusión (GPT-3.5-turbo) y embeddings semánticos
 OPENROUTER_API_KEY    — Ensemble de modelos heterogéneos
+CHORUS_OUTPUT_PATH    — (opcional) Ruta de salida de resultados. Por defecto: resultados/
 ```
 
 ---
@@ -223,15 +230,15 @@ OPENROUTER_API_KEY    — Ensemble de modelos heterogéneos
 
 ### Cómo citar este trabajo
 
-Si utilizas CRML en tu investigación, por favor cita el trabajo asociado (próxima publicación) y la referencia metodológica principal:
+Si utilizas CHORUS en tu investigación, por favor cita el trabajo asociado (próxima publicación) y la referencia metodológica principal:
 
 ```bibtex
-@misc{crml2025,
+@misc{chorus2025,
   author    = {Vega-Barbas, Mario and Grimaldos, Javier},
-  title     = {{CRML}: Clinical Reasoning Multi-{LLM} — Quantifying Diagnostic Dissent as Clinical Signal},
+  title     = {{CHORUS}: Clinical Heterogeneous Orchestration — Quantifying Diagnostic Dissent as Clinical Signal},
   year      = {2025},
   note      = {InnoTep Research Group, Universidad Politécnica de Madrid. En preparación para publicación.},
-  url       = {https://github.com/mariovegabarbas/CRML-Clinical-Reasoning-Multi-LLM-framework}
+  url       = {https://github.com/mariovegabarbas/CHORUS-Clinical-Heterogeneous-Orchestration}
 }
 
 @misc{abtahi2025medley,
@@ -248,7 +255,7 @@ Si utilizas CRML en tu investigación, por favor cita el trabajo asociado (próx
 
 **Añadir nuevos modelos al ensemble**
 
-Edita `modelos.json` siguiendo la estructura existente. CRML soporta cualquier modelo disponible en OpenRouter sin cambios en el código:
+Edita `modelos.json` siguiendo la estructura existente. CHORUS soporta cualquier modelo disponible en OpenRouter sin cambios en el código:
 
 ```json
 { "name": "proveedor/nombre-modelo", "origin": "País", "size": "7B" }
@@ -262,7 +269,7 @@ El módulo `analizador.py` expone las matrices de similitud léxica y semántica
 
 El prompt de síntesis en `analizador.py` puede adaptarse a distintos marcos clínicos (DSM-5, CIE-11, formulación psicodinámica, etc.) o a otros dominios de razonamiento clínico.
 
-**Extender la PMD**
+**Extender la Voz Solista (SOLO)**
 
 Actualmente se expone un único outlier. Es posible generalizar a un ranking completo de modelos por índice de consenso individual, o aplicar clustering sobre la matriz de similitud para identificar subgrupos diagnósticos cohesivos.
 
@@ -270,9 +277,9 @@ Actualmente se expone un único outlier. Es posible generalizar a un ranking com
 
 ## Aviso clínico
 
-> ⚠️ **CRML es una herramienta de apoyo al razonamiento clínico, no un sistema de diagnóstico.**
+> ⚠️ **CHORUS es una herramienta de apoyo al razonamiento clínico, no un sistema de diagnóstico.**
 
-Las salidas del sistema —incluyendo la síntesis fusionada, el CDI y la PMD— son perspectivas generadas por modelos de lenguaje con fines de exploración y deliberación clínica. **No sustituyen, en ningún caso, el criterio profesional del psicoterapeuta o del equipo clínico responsable.**
+Las salidas del sistema —incluyendo la síntesis fusionada, el CDI y la Voz Solista (SOLO)— son perspectivas generadas por modelos de lenguaje con fines de exploración y deliberación clínica. **No sustituyen, en ningún caso, el criterio profesional del psicoterapeuta o del equipo clínico responsable.**
 
 El sistema no tiene acceso a la historia clínica del paciente, no puede realizar una evaluación directa, y sus respuestas están condicionadas por los sesgos inherentes a los modelos de lenguaje utilizados. Cualquier decisión diagnóstica o terapéutica debe recaer exclusivamente en el profesional de la salud mental.
 
@@ -285,5 +292,5 @@ Distribuido bajo licencia [MIT](LICENSE). Consulta el fichero `LICENSE` para má
 ---
 
 <p align="center">
-  <em>CRML · <a href="https://github.com/mariovegabarbas/CRML-Clinical-Reasoning-Multi-LLM-framework">InnoTep Research Group</a> · Universidad Politécnica de Madrid · 2025</em>
+  <em>CHORUS · <a href="https://github.com/mariovegabarbas/CHORUS-Clinical-Heterogeneous-Orchestration">InnoTep Research Group</a> · Universidad Politécnica de Madrid · 2025</em>
 </p>

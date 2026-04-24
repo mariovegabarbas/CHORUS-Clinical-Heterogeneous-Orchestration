@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 app = Flask(__name__, static_folder="static")
 CORS(app)
 
-OUTPUT_PATH = os.environ.get("CRML_OUTPUT_PATH", "resultados")
+OUTPUT_PATH = os.environ.get("CHORUS_OUTPUT_PATH", "resultados")
 
 with open("modelos.json", "r", encoding="UTF-8") as f:
     MODELS_DATA = json.load(f)
@@ -129,7 +129,7 @@ def format_consenso_data(reporte, resultados_raw):
         "top3_modelos": top3,
         "modelo_mas_consensuado": nombre_mas_consensuado,
         "cdi": reporte.get("cdi"),
-        "perspectiva_minoritaria": reporte.get("perspectiva_minoritaria"),
+        "solo": reporte.get("solo"),
         "divergencia_capas": reporte.get("divergencia_capas"),
         "embedding_disponible": reporte.get("embedding_disponible", False),
     }
@@ -186,6 +186,7 @@ def run_ensamble():
         async def ejecutar():
             ensamble = Ensamblador(modelos=modelos)
             resultados = await ensamble.run(prompt)
+            modelos_filtrados = ensamble.modelos_filtrados
             if hasattr(ensamble, "guardar_resultados"):
                 ensamble.guardar_resultados(resultados)
 
@@ -208,8 +209,10 @@ def run_ensamble():
                 "consenso_data": consenso_data,
                 "prompt": prompt,
                 "prompt_preview": prompt[:120] + ("…" if len(prompt) > 120 else ""),
-                "models_count": len(modelos),
-                "models_used": [m["name"] for m in modelos],
+                "models_count": len(resultados),
+                "models_requested": len(modelos),
+                "models_used": [r.get("model_name") for r in resultados],
+                "models_failed": modelos_filtrados,
                 "filename": filename_base + ".json",
                 "timestamp": ts_now.isoformat()
             }
@@ -238,6 +241,6 @@ def run_ensamble():
 
 
 if __name__ == "__main__":
-    print("\n\t\t CRML v2 — Clinical Reasoning Multi-LLM")
+    print("\n\t\t CHORUS — Clinical Heterogeneous Orchestration for Reasoning Under Supervision")
     print(f"\t\t URL: http://localhost:8282\n")
     app.run(host="0.0.0.0", port=8282, debug=False, threaded=True, use_reloader=False)

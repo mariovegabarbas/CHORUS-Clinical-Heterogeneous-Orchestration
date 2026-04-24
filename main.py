@@ -4,7 +4,7 @@ from analizador import dataAnalisis
 import asyncio
 
 def main_menu():
-    print("Bienvenido al Consensuador de Respuestas de Modelos de Lenguaje (CRML)\n¿Quiere usar los modelos gratuitos (1) o los de pago (2)?")
+    print("Bienvenido a CHORUS — Clinical Heterogeneous Orchestration for Reasoning Under Supervision\n¿Quiere usar los modelos gratuitos (1) o los de pago (2)?")
     opcion=input("Teclee 1 o 2: ").strip()
     modelos=cargar_modelos(opcion)
     print(f"Categoría seleccionada: {opcion} -> Cargando {len(modelos)} modelos...\n")
