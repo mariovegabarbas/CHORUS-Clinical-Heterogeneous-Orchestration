@@ -180,6 +180,26 @@ Esto saca a la demo pública del perímetro RGPD de forma limpia. Bajo el campo 
 
 **Historial por navegador.** La web emite una cookie anónima `chorus_browser_token` (uuid4, `httpOnly`, sin datos personales) la primera vez que un visitante ejecuta un análisis. El endpoint `/api/history` filtra los meta.json por ese token, de modo que cada navegador ve solo sus propios análisis sin necesidad de login ni registro. Si la cookie se borra, se pierde ese historial — consistente con el diseño "sin registro".
 
+### Casos de referencia y `session_code`
+
+**Casos de referencia.** El fichero `casos_referencia.json` en la raíz del repo cataloga casos clínicos anonimizados que el ensemble reejecuta periódicamente como medida estable. Sirven para dos cosas:
+
+1. **Demo sin fricción.** Un visitante sin caso propio puede lanzar CHORUS con un click sobre cualquier caso de ejemplo. Es la mejor forma de mostrar la herramienta al estilo de medley.smile.ki.se.
+2. **Medida longitudinal de Jensen-Shannon.** Reejecutar los mismos casos en distintos momentos permite cuantificar la deriva de las distribuciones de outputs del ensemble en el tiempo (la componente dinámica del constructo, diferenciadora respecto a otros sistemas de IA clínica).
+
+El endpoint `GET /api/reference_cases` devuelve la lista con `id`, `titulo`, `descripcion_corta` y `ensemble_recomendado`. **No** expone `texto_completo`: cuando el visitante selecciona un caso, el frontend envía solo el `id` en el POST de `/api/run-ensemble` y el backend carga el texto desde el catálogo. Así los casos quedan auditables en el servidor y no se exponen en claro al navegador.
+
+El `prompt_sha256` del meta.json se calcula sobre el `texto_completo` del caso (no sobre el id), lo que hace que dos reejecuciones del mismo caso produzcan el mismo sha y sean detectables como tales.
+
+**`session_code` (opcional).** `POST /api/run-ensemble` acepta un campo libre `session_code` que se persiste literal en el `meta.json`. Es la única conexión operativa de CHORUS con los estudios de validación gestionados externamente (Google Forms, Qualtrics, ConfAI). La mecánica — que es **protocolo de investigación y no código**:
+
+1. El investigador enrola a un terapeuta y le asigna un identificador de estudio (p. ej. `KARO-P002`).
+2. En cada sesión de recogida (T0, T1, T2), le pide que ejecute N casos de referencia con el `session_code` correspondiente (p. ej. `KARO-T0-P002`).
+3. Al final, el terapeuta rellena el cuestionario ConfAI en la plataforma externa. El primer campo del cuestionario es el mismo `session_code`.
+4. En el análisis, el investigador cruza los `meta.json` filtrados por `session_code` con las respuestas del cuestionario del mismo `session_code`.
+
+En la web pública, el campo `session_code` vive en "Opciones avanzadas (investigadores)", oculto del visitante casual. El catálogo de casos de referencia se puede apuntar a un fichero alternativo mediante la variable de entorno `CHORUS_REFERENCE_CASES`.
+
 ---
 
 ## Instalación
