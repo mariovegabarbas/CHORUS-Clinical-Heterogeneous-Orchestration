@@ -66,6 +66,40 @@ def test_nan_matrix_returns_error_dict_without_exception():
     assert resultado["error"] == "matrix_contains_non_finite_values"
 
 
+# ── Inf en la matriz: mismo comportamiento que NaN ──────────────────────────
+def test_inf_matrix_returns_error_dict_without_exception():
+    matriz = np.identity(3)
+    matriz[0, 1] = float("inf")
+    matriz[1, 0] = float("-inf")
+
+    resultado = calcular_cdi(matriz)
+
+    assert resultado["cdi_geometric"] is None
+    assert resultado["cdi"] is None
+    assert resultado["cdi_mean_dissent"] is None
+    assert resultado["cdi_entropy"] is None
+    assert resultado["cdi_det_raw"] is None
+    assert resultado["nivel"] == "indeterminado"
+    assert resultado["error"] == "matrix_contains_non_finite_values"
+    # El color debe ser neutro (gris), no un color de nivel clínico.
+    assert resultado["color"] == "#888888"
+
+
+# ── El payload de error es JSON-serializable (sin NaN "crudo") ──────────────
+def test_error_payload_is_json_serializable():
+    """NaN no es JSON estándar — si `calcular_cdi` permitiera que NaN
+    se colara en el dict resultante, el frontend fallaría al parsear.
+    Este test congela el invariante: los valores son None (serializable),
+    no NaN."""
+    import json
+    matriz = np.identity(4)
+    matriz[2, 3] = float("nan")
+    resultado = calcular_cdi(matriz)
+    # Si hubiera algún NaN en el dict, json.dumps lo convertiría a
+    # "NaN" con allow_nan=True (default) pero fallaría con allow_nan=False.
+    json.dumps(resultado, allow_nan=False)
+
+
 # ── La clave de retrocompatibilidad cdi_det_raw existe ──────────────────────
 def test_result_exposes_cdi_det_raw_for_backwards_compat():
     matriz = np.identity(3)

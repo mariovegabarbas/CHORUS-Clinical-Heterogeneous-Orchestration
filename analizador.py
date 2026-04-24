@@ -484,9 +484,11 @@ def dataAnalisis(resultados_ensamblador):
     if "error" in rep:
         print(f"[analizador] {rep['error']}")
         return rep
-    cdi = rep.get("cdi", {})
+    cdi = rep.get("cdi") or {}
     print(f"Consenso global : {rep['consenso_global']:.3f}")
-    print(f"CDI             : {cdi.get('cdi','N/A')} — {cdi.get('etiqueta','')}")
+    cdi_val = cdi.get("cdi")
+    cdi_str = f"{cdi_val:.4f}" if isinstance(cdi_val, (int, float)) else "indeterminado"
+    print(f"CDI             : {cdi_str} — {cdi.get('etiqueta','')}")
     if rep.get("embedding_disponible"):
         print("Capa semantica  : embeddings OpenAI activos")
     else:
