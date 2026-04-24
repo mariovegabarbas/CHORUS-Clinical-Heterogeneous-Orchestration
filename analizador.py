@@ -9,6 +9,7 @@ analizador.py — CHORUS
 """
 
 import os
+import time
 import numpy as np
 import json
 import requests
@@ -20,7 +21,9 @@ load_dotenv()
 
 # ── Configuración ────────────────────────────────────────────────────────────
 API_KEY = os.environ.get("OPENAI_API_KEY", "")
-MODELO_FUSION = "gpt-3.5-turbo"
+MODELO_FUSION = os.environ.get("CHORUS_FUSION_MODEL", "gpt-4o-mini")
+FUSION_MAX_TOKENS = 1500
+FUSION_TEMPERATURE = 0.2
 
 CDI_UMBRALES = {
     "baja":    (0.0,  0.25),
@@ -65,29 +68,45 @@ def _matriz_tfidf(textos):
 
 # ── Capa 2: Embeddings OpenAI ────────────────────────────────────────────────
 
+EMBEDDING_MAX_CHARS = 8000
+
+
 def _obtener_embeddings(textos):
+    """Devuelve (vectores_or_None, truncated_flags).
+
+    truncated_flags es una lista de bools paralela a `textos` que indica
+    si el texto excedió EMBEDDING_MAX_CHARS y tuvo que ser truncado
+    antes de enviarlo a la API de embeddings.
+    """
+    truncated_flags = [len(t) > EMBEDDING_MAX_CHARS for t in textos]
+    if any(truncated_flags):
+        n_trunc = sum(truncated_flags)
+        print(f"[analizador] WARNING: {n_trunc}/{len(textos)} textos truncados "
+              f"a {EMBEDDING_MAX_CHARS} caracteres para embeddings.")
     if not API_KEY or API_KEY.startswith("//"):
-        return None
+        return None, truncated_flags
     try:
         url = "https://api.openai.com/v1/embeddings"
         headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
-        payload = {"model": "text-embedding-3-small", "input": [t[:8000] for t in textos]}
+        payload = {"model": "text-embedding-3-small",
+                   "input": [t[:EMBEDDING_MAX_CHARS] for t in textos]}
         resp = requests.post(url, json=payload, headers=headers, timeout=30)
         if resp.status_code == 200:
             data = resp.json()
-            return np.array([d["embedding"] for d in data["data"]])
+            return np.array([d["embedding"] for d in data["data"]]), truncated_flags
         print(f"[analizador] Embeddings API {resp.status_code}")
-        return None
+        return None, truncated_flags
     except Exception as e:
         print(f"[analizador] Error embeddings: {e}")
-        return None
+        return None, truncated_flags
 
 
 def _matriz_embeddings(textos):
-    vecs = _obtener_embeddings(textos)
+    """Devuelve (matriz_similitud_or_None, truncated_flags)."""
+    vecs, flags = _obtener_embeddings(textos)
     if vecs is None:
-        return None
-    return cosine_similarity(vecs)
+        return None, flags
+    return cosine_similarity(vecs), flags
 
 
 # ── CDI ───────────────────────────────────────────────────────────────────────
@@ -331,25 +350,38 @@ def imprimir_matriz_consenso(matriz, nombres_filtrados):
 # ── Fusión ────────────────────────────────────────────────────────────────────
 
 def _llamar_chatgpt(mensajes):
+    """Llama al modelo de fusión. Devuelve (texto, latency_ms).
+
+    latency_ms se mide siempre, incluso en caso de error. El texto
+    es None si la llamada falló.
+    """
+    t0 = time.perf_counter()
     try:
         url = "https://api.openai.com/v1/chat/completions"
         headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
         payload = {"model": MODELO_FUSION, "messages": mensajes,
-                   "max_tokens": 1500, "temperature": 0.2}
+                   "max_tokens": FUSION_MAX_TOKENS, "temperature": FUSION_TEMPERATURE}
         print("[analizador] Generando fusion...")
         resp = requests.post(url, json=payload, headers=headers, timeout=60)
+        latency_ms = int((time.perf_counter() - t0) * 1000)
         if resp.status_code == 200:
-            return resp.json()["choices"][0]["message"]["content"]
+            return resp.json()["choices"][0]["message"]["content"], latency_ms
         print(f"[analizador] Error ChatGPT: {resp.status_code}")
-        return None
+        return None, latency_ms
     except Exception as e:
+        latency_ms = int((time.perf_counter() - t0) * 1000)
         print(f"[analizador] Error fusion: {e}")
-        return None
+        return None, latency_ms
 
 
 def generar_fusion(top_respuestas):
+    """Devuelve (texto_fusionado, latency_ms_o_None).
+
+    Si no hay al menos 2 respuestas, no se llama a la API: se devuelve
+    el texto de la única respuesta (o "") con latencia None.
+    """
     if len(top_respuestas) < 2:
-        return top_respuestas[0]["response"] if top_respuestas else ""
+        return (top_respuestas[0]["response"] if top_respuestas else ""), None
     partes = "\n\n".join(
         f"PERSPECTIVA {i+1} ({r['model_name']}, consenso={r['consenso_individual']:.3f}):\n{r['response']}"
         for i, r in enumerate(top_respuestas)
@@ -367,8 +399,9 @@ Instrucciones:
         {"role": "system", "content": "Eres un experto en sintesis clinica multi-perspectiva."},
         {"role": "user",   "content": contexto}
     ]
-    resultado = _llamar_chatgpt(mensajes)
-    return resultado.strip() if resultado else top_respuestas[0]["response"]
+    resultado, latency_ms = _llamar_chatgpt(mensajes)
+    texto = resultado.strip() if resultado else top_respuestas[0]["response"]
+    return texto, latency_ms
 
 
 # ── Análisis principal ────────────────────────────────────────────────────────
@@ -386,7 +419,7 @@ def dataAnalisis_interno(resultados_ensamblador):
         nombres = [r["model_name"] for r in validos]
 
         m_tfidf = _matriz_tfidf(textos)
-        m_embed = _matriz_embeddings(textos)
+        m_embed, embedding_truncated_flags = _matriz_embeddings(textos)
         m_principal = m_embed if m_embed is not None else m_tfidf
 
         cdi_info = calcular_cdi(m_principal)
@@ -403,7 +436,7 @@ def dataAnalisis_interno(resultados_ensamblador):
         mayores = consensos_ind[:n_top]
         respuesta_mc = consensos_ind[0] if consensos_ind else None
 
-        fusionada, modelos_base = None, []
+        fusionada, modelos_base, fusion_latency_ms = None, [], None
         if len(mayores) >= 3:
             top3 = mayores[:3]
             top3_datos = []
@@ -414,7 +447,7 @@ def dataAnalisis_interno(resultados_ensamblador):
                                            "response": r["response"],
                                            "consenso_individual": c["consenso_individual"]})
                         break
-            fusionada = generar_fusion(top3_datos)
+            fusionada, fusion_latency_ms = generar_fusion(top3_datos)
             modelos_base = [d["model_name"] for d in top3_datos]
 
         return {
@@ -430,6 +463,11 @@ def dataAnalisis_interno(resultados_ensamblador):
             "embedding_disponible": m_embed is not None,
             "respuesta_fusionada": fusionada,
             "modelos_base": modelos_base,
+            "fusion_modelo": MODELO_FUSION if fusionada else None,
+            "fusion_latency_ms": fusion_latency_ms,
+            "fusion_max_tokens": FUSION_MAX_TOKENS if fusionada else None,
+            "fusion_temperature": FUSION_TEMPERATURE if fusionada else None,
+            "embedding_truncated_flags": embedding_truncated_flags,
             "_matriz_tfidf": m_tfidf,
             "_matriz_embed": m_embed,
             "_matriz_principal": m_principal,

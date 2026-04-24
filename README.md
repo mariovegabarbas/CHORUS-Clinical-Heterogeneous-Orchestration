@@ -159,6 +159,27 @@ La única excepción es el caso degenerado en el que **todos** los modelos son m
 
 La divergencia entre la matriz léxica (TF-IDF) y la semántica (embeddings) actúa como detector de un fenómeno de especial relevancia clínica: modelos que emplean el mismo vocabulario técnico para describir fenómenos distintos, o modelos que difieren en terminología pero coinciden en la estructura conceptual del diagnóstico.
 
+### Trazabilidad del análisis (schema meta.json v1.0)
+
+Cada ejecución produce dos ficheros en `resultados/`:
+
+- `ensamble_YYYYMMDD_HHMMSS.json` — respuestas crudas del ensamble (uso interno del ensamblador).
+- `ensamble_YYYYMMDD_HHMMSS.meta.json` — metadatos estructurados del análisis (schema v1.0), que es el que alimenta la trazabilidad científica y el historial en el frontend.
+
+**Decisión RGPD.** El `meta.json` **no contiene el texto completo del prompt** introducido por el visitante. Solo se conservan:
+
+- `prompt_sha256` — hash SHA-256 del prompt (permite detectar reejecuciones del mismo caso sin almacenar su contenido).
+- `prompt_preview` — primeros 120 caracteres, orientación humana para el historial.
+- `prompt_length_chars` — longitud del prompt en caracteres.
+
+Esto saca a la demo pública del perímetro RGPD de forma limpia. Bajo el campo de entrada del caso en la web se muestra un aviso explícito de este comportamiento.
+
+**Campos del schema v1.0** (extracto): `schema_version`, `case_uuid`, `case_reference_id`, `session_code`, `browser_token`, `timestamp_utc`/`timestamp_local`, `ensemble.{n_modelos, model_type, modelos[]}` con latencia y `api_error` por modelo, `determinismo.{temperature, seed, nota}`, `fusion.{modelo, latency_ms, max_tokens, temperature}`, `matrices.{tfidf, embed, principal}`, `cdi`, `solo`, `divergencia_capas`, `consenso_global`, `consensos_individuales`, `respuesta_fusionada_sha256`, `chorus_version` (hash del commit en ejecución). La definición y validador están en `schemas/meta_v1.py`; cualquier payload sin todos los campos obligatorios o con tipos incorrectos se rechaza con `MetaValidationError`.
+
+**Versionado.** Los `meta.json` producidos antes del schema v1.0 no se migran automáticamente; se consideran legacy. Futuras versiones del schema subirán la `schema_version` y deberán migrarse de forma explícita.
+
+**Historial por navegador.** La web emite una cookie anónima `chorus_browser_token` (uuid4, `httpOnly`, sin datos personales) la primera vez que un visitante ejecuta un análisis. El endpoint `/api/history` filtra los meta.json por ese token, de modo que cada navegador ve solo sus propios análisis sin necesidad de login ni registro. Si la cookie se borra, se pierde ese historial — consistente con el diseño "sin registro".
+
 ---
 
 ## Instalación
