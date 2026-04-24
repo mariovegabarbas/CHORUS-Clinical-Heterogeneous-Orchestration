@@ -327,13 +327,36 @@ def _construir_meta(*, filename_base, prompt, model_type, modelos_solicitados,
 
 
 def _guardar_meta(filename_base, meta_payload):
+    """Escritura atómica de `<base>.meta.json`.
+
+    Se escribe primero en `<base>.meta.json.tmp`, se hace `fsync` para
+    forzar el volcado a disco y se usa `os.replace` para mover el
+    fichero a su ruta final. `os.replace` es atómico en POSIX y en
+    Windows (cuando origen y destino están en el mismo volumen), así
+    que el meta.json final nunca existe en estado parcial: o no existe,
+    o está completo y validado.
+
+    Si algo falla durante la escritura se elimina el `.tmp` para no
+    dejar basura y se re-lanza la excepción (el caller decide qué hacer).
+    """
+    out_dir = Path(OUTPUT_PATH)
+    out_dir.mkdir(exist_ok=True, parents=True)
+    final_path = out_dir / f"{filename_base}.meta.json"
+    tmp_path = out_dir / f"{filename_base}.meta.json.tmp"
     try:
-        Path(OUTPUT_PATH).mkdir(exist_ok=True, parents=True)
-        meta_path = Path(OUTPUT_PATH) / f"{filename_base}.meta.json"
-        with open(meta_path, "w", encoding="utf-8") as f:
+        with open(tmp_path, "w", encoding="utf-8") as f:
             json.dump(meta_payload, f, ensure_ascii=False, indent=2, default=_serializar)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, final_path)
     except Exception as e:
+        try:
+            if tmp_path.exists():
+                tmp_path.unlink()
+        except Exception:
+            pass
         print(f"[app] Error guardando meta: {e}")
+        raise
 
 
 @app.route("/api/run-ensemble", methods=["POST"])
@@ -403,7 +426,7 @@ def run_ensamble():
                 for i, r in enumerate(resultados)
             ]
 
-            reporte = dataAnalisis(resultados)
+            reporte = await dataAnalisis(resultados)
             reporte_limpio = {
                 k: v for k, v in reporte.items()
                 if not k.startswith("_") and k != "embedding_truncated_flags"
@@ -440,8 +463,14 @@ def run_ensamble():
                 case_reference_id=case_reference_id,
                 session_code=session_code,
             )
-            _guardar_meta(filename_base, meta)
             serializado["case_uuid"] = meta["case_uuid"]
+            try:
+                _guardar_meta(filename_base, meta)
+            except OSError as ose:
+                # El análisis ya está entregado al visitante; la escritura
+                # atómica falló por I/O (permisos, disco lleno, etc.). No
+                # degrada la respuesta, solo se pierde la traza persistente.
+                print(f"[app] No se pudo persistir meta.json: {ose}")
         except MetaValidationError as mve:
             print(f"[app] Meta schema v1.0 inválido: {mve}")
             traceback.print_exc()

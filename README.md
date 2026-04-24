@@ -200,6 +200,14 @@ El `prompt_sha256` del meta.json se calcula sobre el `texto_completo` del caso (
 
 En la web pública, el campo `session_code` vive en "Opciones avanzadas (investigadores)", oculto del visitante casual. El catálogo de casos de referencia se puede apuntar a un fichero alternativo mediante la variable de entorno `CHORUS_REFERENCE_CASES`.
 
+### Robustez del pipeline
+
+**Escritura atómica del `meta.json`.** `_guardar_meta` escribe primero en `<base>.meta.json.tmp`, fuerza el volcado a disco con `fsync` y usa `os.replace` para mover el fichero a su ruta final. `os.replace` es atómico en POSIX y en Windows (cuando origen y destino están en el mismo volumen): el `meta.json` definitivo nunca existe en estado parcial — o no existe, o está completo y validado contra el schema v1.0. Un SIGKILL a mitad de escritura, un fallo de serialización o un `fsync` fallido dejan el directorio de salida limpio (el `.tmp` huérfano se borra en el `except`).
+
+**Fusión no bloqueante.** `analizador._llamar_chatgpt` y `analizador.generar_fusion` son `async` y usan `aiohttp` en lugar de `requests` síncrono. Antes, la llamada de fusión se ejecutaba sincrónicamente dentro de `asyncio.run(ejecutar())` y bloqueaba el event loop mientras esperaba la respuesta de OpenAI; ahora encaja naturalmente con el resto del pipeline asíncrono del ensamblador.
+
+**Reintentos con backoff exponencial.** Tanto la fusión como cada llamada individual del ensamblador a OpenRouter reintentan hasta 3 veces con espera 1s / 2s / 4s para `429` y `5xx` (y errores transitorios de red: `ClientError`, `TimeoutError`). Los `4xx` no-429 no se reintentan: no son transitorios. La configuración está en `RETRY_MAX_ATTEMPTS` y `RETRY_BACKOFF_SECONDS` dentro de `analizador.py` y `Ensambladores/ensamblador_LLM.py`.
+
 ---
 
 ## Instalación
