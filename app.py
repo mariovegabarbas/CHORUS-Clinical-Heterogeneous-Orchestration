@@ -20,9 +20,32 @@ CORS(app, supports_credentials=True)
 
 OUTPUT_PATH = os.environ.get("CHORUS_OUTPUT_PATH", "resultados")
 BROWSER_COOKIE = "chorus_browser_token"
+REFERENCE_CASES_PATH = os.environ.get(
+    "CHORUS_REFERENCE_CASES", "casos_referencia.json"
+)
 
 with open("modelos.json", "r", encoding="UTF-8") as f:
     MODELS_DATA = json.load(f)
+
+
+def _load_reference_cases():
+    """Carga los casos de referencia desde disco. Devuelve dict vacío
+    si el fichero no existe o está mal formado (la web sigue funcionando
+    sin ellos; el endpoint devolverá una lista vacía)."""
+    try:
+        with open(REFERENCE_CASES_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        casos = data.get("casos") or []
+        return {c["id"]: c for c in casos if isinstance(c, dict) and c.get("id")}
+    except FileNotFoundError:
+        print(f"[app] No se encontró {REFERENCE_CASES_PATH}: casos de referencia deshabilitados")
+        return {}
+    except Exception as e:
+        print(f"[app] Error leyendo casos de referencia: {e}")
+        return {}
+
+
+REFERENCE_CASES = _load_reference_cases()
 
 try:
     from analizador import dataAnalisis
@@ -79,6 +102,27 @@ def get_models():
     return jsonify({"success": True,
                     "free_models": MODELS_DATA["LLM"]["FREE_MODELS"],
                     "pay_models":  MODELS_DATA["LLM"]["PAY_MODELS"]})
+
+
+@app.route("/api/reference_cases", methods=["GET"])
+def get_reference_cases():
+    """Devuelve la lista pública de casos de referencia.
+
+    El texto completo (`texto_completo`) NO se expone al navegador:
+    cuando el visitante selecciona un caso, envía solo el `id` en el
+    POST de /api/run-ensemble y el backend carga el texto desde disco.
+    Así los casos quedan auditables y el frontend no los expone en claro.
+    """
+    casos = [
+        {
+            "id": c.get("id"),
+            "titulo": c.get("titulo"),
+            "descripcion_corta": c.get("descripcion_corta"),
+            "ensemble_recomendado": c.get("ensemble_recomendado", []),
+        }
+        for c in REFERENCE_CASES.values()
+    ]
+    return jsonify({"success": True, "casos": casos})
 
 
 def _browser_token():
@@ -306,6 +350,21 @@ def run_ensamble():
         model_type  = data.get("modelType", "free")
         session_code = data.get("session_code") or None
         case_reference_id = data.get("case_reference_id") or None
+
+        # Si llega un case_reference_id, el texto se carga desde el
+        # catálogo del backend. El frontend no necesita haber recibido
+        # `texto_completo`, lo que permite que /api/reference_cases
+        # nunca lo exponga al navegador.
+        if case_reference_id:
+            caso = REFERENCE_CASES.get(case_reference_id)
+            if not caso:
+                return jsonify({"success": False,
+                                "error": f"Caso de referencia no encontrado: {case_reference_id}"})
+            prompt = (caso.get("texto_completo") or "").strip()
+            # Fallback implícito: si el request no trajo modelos pero el
+            # caso tiene ensemble_recomendado, lo usamos tal cual.
+            if not model_names and caso.get("ensemble_recomendado"):
+                model_names = list(caso["ensemble_recomendado"])
 
         if not prompt:
             return jsonify({"success": False, "error": "El prompt no puede estar vacío"})

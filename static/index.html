@@ -474,6 +474,26 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
     <!-- 2. Caso clínico -->
     <div class="card">
       <div class="card-title"><span class="step-num">2</span> Describe el caso clínico</div>
+
+      <div id="reference-cases-block" style="margin-bottom:14px; display:none">
+        <p style="font-size:0.82rem; color:var(--muted); margin:0 0 8px">
+          ¿Sin un caso propio? Prueba con uno de los casos de ejemplo anonimizados:
+        </p>
+        <div id="reference-cases-list" style="display:flex; flex-wrap:wrap; gap:8px"></div>
+      </div>
+
+      <div id="reference-selected-banner" style="display:none; margin-bottom:10px; padding:10px 12px; border-radius:6px; background:#eff6ff; border:1px solid #bfdbfe; font-size:0.85rem">
+        <strong>Caso de referencia seleccionado:</strong>
+        <span id="reference-selected-title"></span>
+        <button type="button" onclick="clearReferenceCase()"
+                style="margin-left:10px; background:transparent; border:1px solid #60a5fa; color:#1d4ed8; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.78rem">
+          Desmarcar
+        </button>
+        <div style="font-size:0.74rem; color:var(--muted); margin-top:4px">
+          El texto se carga en el servidor desde el catálogo. No se muestra aquí.
+        </div>
+      </div>
+
       <p style="font-size:0.82rem; color:var(--muted); margin-bottom:10px">
         ⚠️ No incluyas información personal identificable del paciente (nombre, DNI, dirección).
       </p>
@@ -487,6 +507,22 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
         Solo se conservan metadatos del análisis (hash del texto, longitud, vista previa de 120 caracteres,
         métricas de consenso y referencias a los modelos usados).
       </p>
+
+      <details style="margin-top:10px; font-size:0.82rem">
+        <summary style="cursor:pointer; color:var(--muted)">Opciones avanzadas (investigadores)</summary>
+        <div style="padding:10px 4px 4px; line-height:1.5">
+          <label for="session-code-input" style="display:block; margin-bottom:4px; font-weight:600">
+            Código de sesión (<code>session_code</code>)
+          </label>
+          <input id="session-code-input" type="text" placeholder="p. ej. KARO-T0-P002"
+                 style="width:100%; padding:6px 8px; border:1px solid var(--border, #e2e8f0); border-radius:4px; font-family:ui-monospace, monospace; font-size:0.85rem"
+                 autocomplete="off">
+          <p style="font-size:0.75rem; color:var(--muted); margin-top:6px">
+            Identificador compartido para cruzar este análisis con cuestionarios externos
+            (ConfAI). Opcional; déjalo vacío en uso casual.
+          </p>
+        </div>
+      </details>
     </div>
 
     <!-- 3. Ejecutar -->
@@ -649,10 +685,13 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
 let selectedModels = new Set();
 let currentType = "free";
 let allModels = { free: [], pay: [] };
+let referenceCases = [];
+let selectedReferenceCase = null;  // objeto {id, titulo, descripcion_corta, ensemble_recomendado} o null
 
 /* ── Init ───────────────────────────────────────────────── */
 document.addEventListener("DOMContentLoaded", async () => {
   await loadModelsFromServer();
+  await loadReferenceCases();
   document.getElementById("prompt-input").addEventListener("input", () => {
     updateRunButton();
     const len = document.getElementById("prompt-input").value.length;
@@ -727,8 +766,68 @@ function selectAll()   { allModels[currentType].forEach(m => selectedModels.add(
 function deselectAll() { allModels[currentType].forEach(m => selectedModels.delete(m.name)); loadModels(currentType); }
 function updateSelectedCount() { document.getElementById("selected-count").textContent = selectedModels.size; }
 function updateRunButton() {
-  const ok = selectedModels.size > 0 && document.getElementById("prompt-input").value.trim().length > 10;
+  const textoOk = selectedReferenceCase !== null
+    || document.getElementById("prompt-input").value.trim().length > 10;
+  const ok = selectedModels.size > 0 && textoOk;
   document.getElementById("run-btn").disabled = !ok;
+}
+
+/* ── Casos de referencia ────────────────────────────────── */
+async function loadReferenceCases() {
+  try {
+    const r = await fetch("/api/reference_cases");
+    const d = await r.json();
+    if (!d.success || !Array.isArray(d.casos) || !d.casos.length) return;
+    referenceCases = d.casos;
+    const cont = document.getElementById("reference-cases-list");
+    const block = document.getElementById("reference-cases-block");
+    cont.innerHTML = d.casos.map(c => `
+      <button type="button" class="reference-case-btn"
+              onclick="selectReferenceCase('${c.id}')"
+              style="text-align:left; padding:10px 12px; border-radius:6px; border:1px solid var(--border, #e2e8f0); background:#fff; cursor:pointer; flex:1 1 260px; min-width:240px">
+        <div style="font-weight:600; font-size:0.88rem; margin-bottom:4px">${escHtml(c.titulo || c.id)}</div>
+        <div style="font-size:0.78rem; color:var(--muted); line-height:1.4">${escHtml(c.descripcion_corta || "")}</div>
+        <div style="font-size:0.72rem; color:var(--muted); margin-top:6px">
+          <code>${escHtml(c.id)}</code>${c.ensemble_recomendado?.length ? ` · ensemble recomendado: ${c.ensemble_recomendado.length} modelos` : ""}
+        </div>
+      </button>
+    `).join("");
+    block.style.display = "block";
+  } catch (e) {
+    console.warn("No se pudieron cargar casos de referencia:", e);
+  }
+}
+
+function selectReferenceCase(id) {
+  const caso = referenceCases.find(c => c.id === id);
+  if (!caso) return;
+  selectedReferenceCase = caso;
+  document.getElementById("reference-selected-title").textContent = caso.titulo || caso.id;
+  document.getElementById("reference-selected-banner").style.display = "block";
+  const ta = document.getElementById("prompt-input");
+  ta.value = "";
+  ta.disabled = true;
+  ta.placeholder = `Usando caso de referencia “${caso.titulo}” — el texto se carga en el servidor.`;
+  document.getElementById("char-count").textContent = 0;
+
+  // Si el caso tiene ensemble recomendado, lo pre-seleccionamos.
+  if (caso.ensemble_recomendado?.length) {
+    selectedModels = new Set(caso.ensemble_recomendado);
+    // Cambia al tipo que contenga los modelos recomendados, si hace falta.
+    const enPay = caso.ensemble_recomendado.some(n => (allModels.pay || []).some(m => m.name === n));
+    if (enPay && currentType !== "pay") loadModels("pay");
+    else loadModels(currentType);
+  }
+  updateRunButton();
+}
+
+function clearReferenceCase() {
+  selectedReferenceCase = null;
+  document.getElementById("reference-selected-banner").style.display = "none";
+  const ta = document.getElementById("prompt-input");
+  ta.disabled = false;
+  ta.placeholder = "Describe el caso clínico, la consulta psicoterapéutica, los síntomas observados, la historia relevante y cualquier hipótesis diagnóstica previa…";
+  updateRunButton();
 }
 function shortName(full) {
   const p = full.split("/");
@@ -747,7 +846,11 @@ function showStatus(msg, type = "info") {
 async function runAnalysis() {
   const prompt = document.getElementById("prompt-input").value.trim();
   const models = Array.from(selectedModels);
-  if (!prompt || !models.length) return;
+  const usingReference = selectedReferenceCase !== null;
+  if (!models.length) return;
+  if (!usingReference && !prompt) return;
+
+  const sessionCode = (document.getElementById("session-code-input")?.value || "").trim() || null;
 
   const btn = document.getElementById("run-btn");
   btn.disabled  = true;
@@ -755,12 +858,20 @@ async function runAnalysis() {
   showStatus(`Consultando ${models.length} modelo(s) en paralelo. Esto puede tardar 30–60 segundos…`, "info");
   document.getElementById("results-section").style.display = "none";
 
+  const payload = {
+    prompt: usingReference ? "" : prompt,
+    models,
+    modelType: currentType,
+    case_reference_id: usingReference ? selectedReferenceCase.id : null,
+    session_code: sessionCode,
+  };
+
   try {
     const resp = await fetch("/api/run-ensemble", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
-      body: JSON.stringify({ prompt, models, modelType: currentType })
+      body: JSON.stringify(payload)
     });
     if (!resp.ok) throw new Error(`Error HTTP ${resp.status}`);
     const data = await resp.json();

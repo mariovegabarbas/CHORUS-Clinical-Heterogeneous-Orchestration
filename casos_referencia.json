@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "descripcion": "Casos clínicos anonimizados usados como referencia estable del ensemble. Se reejecutan periódicamente para medir la divergencia de Jensen-Shannon entre distribuciones de outputs a lo largo del tiempo.",
+  "casos": [
+    {
+      "id": "REF-001",
+      "titulo": "Depresión moderada con ideación pasiva",
+      "descripcion_corta": "Varón 28 años, episodio depresivo mayor, sin plan suicida activo.",
+      "texto_completo": "Paciente varón de 28 años, sin antecedentes psiquiátricos conocidos, acude a consulta derivado por su médico de atención primaria. Refiere un cuadro de 4 meses de evolución con ánimo bajo persistente, anhedonia marcada, insomnio de mantenimiento, pérdida de apetito con reducción ponderal de 5 kg, fatiga diurna intensa y dificultades crecientes en su rendimiento laboral. Reconoce ideación suicida pasiva ('a veces pienso que sería más fácil no estar'), sin plan ni intención actual, sin acceso a métodos letales. Niega consumo de sustancias. No presenta síntomas psicóticos ni maníacos. Su pareja corrobora el deterioro funcional. Solicita orientación diagnóstica y recomendaciones iniciales de manejo.",
+      "ensemble_recomendado": ["openai/gpt-4o", "anthropic/claude-3.5-sonnet", "google/gemini-pro-1.5"],
+      "notas_investigador": "Caso semilla para T0 del estudio Karolinska. CDI esperado: bajo-moderado (cuadro prototípico con alto consenso entre modelos)."
+    },
+    {
+      "id": "REF-002",
+      "titulo": "Ansiedad generalizada vs trastorno adaptativo",
+      "descripcion_corta": "Mujer 42 años, síntomas ansiosos tras reestructuración laboral reciente.",
+      "texto_completo": "Mujer de 42 años, profesora de secundaria, consulta por síntomas ansiosos de 3 meses de evolución: preocupación excesiva y difícil de controlar sobre el futuro profesional, tensión muscular, dificultades de concentración, irritabilidad, alteración del sueño de inicio. Los síntomas comenzaron tras una reestructuración en su centro que introdujo incertidumbre sobre su continuidad. No hay historia previa de trastornos de ansiedad. La paciente mantiene su funcionamiento laboral y social aunque con coste subjetivo alto. Niega pánico, fobias específicas, sintomatología depresiva mayor o ideación autolítica. Pregunta si lo que le ocurre es 'normal dado el contexto' o requiere tratamiento.",
+      "ensemble_recomendado": ["openai/gpt-4o", "anthropic/claude-3.5-sonnet", "openai/gpt-4o-mini"],
+      "notas_investigador": "Caso diseñado para disparar divergencia: criterios DSM/CIE de TAG frente a trastorno adaptativo con ansiedad — los modelos suelen discrepar en la ponderación de la causalidad contextual."
+    },
+    {
+      "id": "REF-003",
+      "titulo": "Caso complejo: síntomas mixtos con componente traumático",
+      "descripcion_corta": "Mujer 34 años, síntomas intrusivos, hiperreactividad autonómica y evitación.",
+      "texto_completo": "Mujer de 34 años, acude derivada desde urgencias tras una crisis en el trabajo. Refiere desde hace 6 meses pesadillas recurrentes y flashbacks relacionados con un accidente de tráfico grave sufrido el año anterior (ella conducía, falleció su acompañante). Describe hiperreactividad autonómica ante estímulos vinculados al evento (frenazos, sonidos de sirena), evitación activa de conducir y de hablar del episodio, síntomas disociativos ocasionales, ánimo bajo, culpa intensa y consumo creciente de alcohol 'para dormir'. Sin red de apoyo cercana. Ha rechazado previamente ofertas de atención psicológica. Actualmente acepta evaluación por presión laboral. Niega ideación autolítica activa pero dice 'no saber cómo seguir'.",
+      "ensemble_recomendado": ["openai/gpt-4o", "anthropic/claude-3.5-sonnet", "google/gemini-pro-1.5", "openai/gpt-4o-mini"],
+      "notas_investigador": "Caso con alta complejidad: TEPT, trastorno depresivo comórbido, consumo de alcohol, duelo traumático, culpa de superviviente. CDI esperado: alto (múltiples hipótesis diagnósticas con priorizaciones distintas entre modelos). Útil para T0/T1/T2 como marcador de sensibilidad."
+    }
+  ]
+}
