@@ -1,9 +1,8 @@
 """
-analizador.py — CRML v2
-=======================
-Mejoras sobre v1:
+analizador.py — CHORUS
+======================
   1. Clinical Dissent Index (CDI) formalizado con umbrales clínicos
-  2. Perspectiva Minoritaria Destacada: el modelo más disidente expuesto explícitamente
+  2. Voz Solista (SOLO): el modelo más disidente expuesto explícitamente
   3. Doble capa de similitud: TF-IDF (léxica) + Embeddings OpenAI (semántica)
   4. Taxonomía de complejidad diagnóstica basada en CDI
   5. Reporte enriquecido para el frontend
@@ -168,9 +167,9 @@ def calcular_consensos_individuales(matriz_sim, nombres):
     return sorted(resultado, key=lambda x: x["consenso_individual"], reverse=True)
 
 
-# ── Perspectiva Minoritaria ───────────────────────────────────────────────────
+# ── Voz Solista (SOLO) ────────────────────────────────────────────────────────
 
-def identificar_perspectiva_minoritaria(consensos_ind, resultados_raw):
+def identificar_solo(consensos_ind, resultados_raw):
     validos = [c for c in consensos_ind if c["consenso_individual"] > 0]
     if not validos:
         return None
@@ -233,7 +232,7 @@ def calcular_consenso_semantico(respuestas, nombres):
         "indices_filtrados": rep.get("indices_filtrados", list(range(len(respuestas)))),
         "nombres_filtrados": nombres,
         "cdi": rep.get("cdi"),
-        "perspectiva_minoritaria": rep.get("perspectiva_minoritaria"),
+        "solo": rep.get("solo"),
         "divergencia_capas": rep.get("divergencia_capas"),
     }
 
@@ -322,7 +321,7 @@ def dataAnalisis_interno(resultados_ensamblador):
                     for j in range(len(m_principal)) if i != j]
         cg = round(float(np.mean(vals_off)), 4) if vals_off else 0.5
 
-        perspectiva_min = identificar_perspectiva_minoritaria(consensos_ind, validos)
+        perspectiva_min = identificar_solo(consensos_ind, validos)
         divergencia = calcular_divergencia_capas(m_tfidf, m_embed)
 
         n_top = max(1, len(consensos_ind) * 2 // 3)
@@ -351,7 +350,7 @@ def dataAnalisis_interno(resultados_ensamblador):
             "indices_filtrados": list(range(len(validos))),
             "nombres_filtrados": nombres,
             "cdi": cdi_info,
-            "perspectiva_minoritaria": perspectiva_min,
+            "solo": perspectiva_min,
             "divergencia_capas": divergencia,
             "embedding_disponible": m_embed is not None,
             "respuesta_fusionada": fusionada,
@@ -367,7 +366,7 @@ def dataAnalisis_interno(resultados_ensamblador):
 
 
 def dataAnalisis(resultados_ensamblador):
-    print("\n\t\tANALISIS CRML v2")
+    print("\n\t\tANALISIS CHORUS")
     rep = dataAnalisis_interno(resultados_ensamblador)
     if "error" in rep:
         print(f"[analizador] {rep['error']}")
@@ -382,7 +381,7 @@ def dataAnalisis(resultados_ensamblador):
     rm = rep.get("respuesta_mas_consensuada")
     if rm:
         print(f"Mas consensuado : {rm['modelo']} ({rm['consenso_individual']:.3f})")
-    pm = rep.get("perspectiva_minoritaria")
+    pm = rep.get("solo")
     if pm:
         print(f"Mas disidente   : {pm['modelo']} ({pm['consenso_individual']:.3f})")
     div = rep.get("divergencia_capas")

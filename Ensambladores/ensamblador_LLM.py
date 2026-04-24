@@ -36,6 +36,7 @@ class Ensamblador:
     def __init__(self, modelos=None, timeout_seg=60):
         self.modelos = modelos or []
         self.timeout = aiohttp.ClientTimeout(total=timeout_seg)
+        self.modelos_filtrados = []
 
     async def query_modelo(self, sesion: aiohttp.ClientSession, modelo: dict, prompt: str) -> dict:
         headers = {
@@ -83,9 +84,15 @@ class Ensamblador:
             resultados = await asyncio.gather(*tasks, return_exceptions=False)
 
         validos = []
+        self.modelos_filtrados = []
         for r in resultados:
             if _es_error(r["response"]):
-                print(f"[ensamblador] Filtrado: {r['model_name']} — {r['response'][:80]}")
+                motivo = r["response"][:120].strip()
+                print(f"[ensamblador] Filtrado: {r['model_name']} — {motivo}")
+                self.modelos_filtrados.append({
+                    "model_name": r["model_name"],
+                    "reason": motivo
+                })
             else:
                 validos.append(r)
 

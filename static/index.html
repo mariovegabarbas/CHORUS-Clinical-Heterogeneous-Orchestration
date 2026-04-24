@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CRML — Clinical Reasoning Multi-LLM</title>
+<title>CHORUS — Clinical Heterogeneous Orchestration</title>
 <style>
 /* ── Reset & variables ───────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -256,7 +256,7 @@ textarea:focus { outline: none; border-color: var(--primary); }
 .bar-fill  { height: 100%; border-radius: 4px; transition: width .5s; }
 .bar-val   { width: 52px; text-align: right; font-size: 0.8rem; font-weight: 600; flex-shrink: 0; }
 
-/* ── PMD ─────────────────────────────────────────────────── */
+/* ── Voz Solista (SOLO) ──────────────────────────────────── */
 .pm-card {
   border: 2px dashed #f59e0b;
   border-radius: 8px; padding: 16px;
@@ -381,8 +381,8 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
 <!-- ── Sidebar ──────────────────────────────────────────── -->
 <nav class="sidebar">
   <div class="sidebar-brand">
-    <h1>CRML</h1>
-    <p>Clinical Reasoning<br>Multi-LLM</p>
+    <h1>CHORUS</h1>
+    <p>Clinical Heterogeneous<br>Orchestration</p>
   </div>
   <div class="sidebar-nav">
     <div class="nav-item active" onclick="showPage('home')" id="nav-home">
@@ -506,9 +506,9 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
         <div id="bars-container"></div>
       </div>
 
-      <!-- PMD -->
+      <!-- SOLO -->
       <div class="card" id="pm-section" style="display:none">
-        <div class="card-title">⚑ Perspectiva Minoritaria Destacada</div>
+        <div class="card-title">⚑ Voz Solista (SOLO)</div>
         <div id="pm-container"></div>
       </div>
 
@@ -538,7 +538,7 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
     <div class="card">
       <div class="card-title">Directorio de modelos</div>
       <p style="font-size:0.85rem; color:var(--muted); margin-bottom:18px">
-        Modelos disponibles en CRML, organizados por origen geográfico.
+        Modelos disponibles en CHORUS, organizados por origen geográfico.
         El ensemble consulta modelos de distintas arquitecturas y geografías para maximizar la diversidad diagnóstica.
       </p>
       <div id="models-dir-content">Cargando…</div>
@@ -569,13 +569,13 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
   <!-- ══ PAGE: ABOUT ═════════════════════════════════════ -->
   <div class="page" id="page-about">
     <div class="card">
-      <div class="card-title">Metodología CRML</div>
+      <div class="card-title">Metodología CHORUS</div>
 
       <div class="method-section">
-        <h3>¿Qué es CRML?</h3>
-        <p>CRML (Clinical Reasoning Multi-LLM) es un sistema de razonamiento clínico que convierte el <strong>desacuerdo diagnóstico entre múltiples LLMs en una señal clínica valiosa</strong>. A diferencia de sistemas que promedian respuestas, CRML expone y cuantifica la divergencia del ensemble.</p>
+        <h3>¿Qué es CHORUS?</h3>
+        <p>CHORUS (Clinical Heterogeneous Orchestration for Reasoning Under Supervision) es un sistema de razonamiento clínico que convierte el <strong>desacuerdo diagnóstico entre múltiples LLMs en una señal clínica valiosa</strong>. A diferencia de sistemas que promedian respuestas, CHORUS expone y cuantifica la divergencia del ensemble.</p>
         <div class="highlight-box">
-          Inspirado en MEDLEY (Abtahi, Astaraki &amp; Seoane, 2025), CRML extiende ese framework con métricas de disenso formalizadas y aplicación específica a salud mental y psicoterapia.
+          Inspirado en MEDLEY (Abtahi, Astaraki &amp; Seoane, 2025), CHORUS extiende ese framework con métricas de disenso formalizadas y aplicación específica a salud mental y psicoterapia.
         </div>
       </div>
 
@@ -597,14 +597,14 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
 
       <div class="method-section">
         <h3>Doble capa de similitud</h3>
-        <p>CRML analiza las respuestas en dos capas complementarias:</p>
+        <p>CHORUS analiza las respuestas en dos capas complementarias:</p>
         <p><strong>Capa léxica (TF-IDF):</strong> Compara el vocabulario clínico utilizado. Detecta si los modelos usan los mismos términos técnicos.</p>
         <p><strong>Capa semántica (OpenAI Embeddings):</strong> Compara el significado real de las respuestas. Puede detectar cuando dos modelos usan vocabulario similar pero describen fenómenos distintos.</p>
         <p>La <em>divergencia léxico-semántica</em> (distancia Frobenius entre ambas matrices) es un indicador de ambigüedad terminológica en el caso.</p>
       </div>
 
       <div class="method-section">
-        <h3>Perspectiva Minoritaria Destacada (PMD)</h3>
+        <h3>Voz Solista (SOLO)</h3>
         <p>El modelo con menor consenso individual respecto al ensemble no es tratado como un error sino como una <strong>hipótesis diagnóstica alternativa</strong> que merece evaluación clínica independiente. En salud mental, la incertidumbre no indica fallo — indica la complejidad inherente de la condición humana.</p>
       </div>
 
@@ -616,11 +616,11 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
       <div class="method-section">
         <h3>Comparativa con MEDLEY</h3>
         <table class="method-table">
-          <thead><tr><th>Componente</th><th>MEDLEY</th><th>CRML</th></tr></thead>
+          <thead><tr><th>Componente</th><th>MEDLEY</th><th>CHORUS</th></tr></thead>
           <tbody>
             <tr><td>Métrica de diversidad</td><td>Sin métrica formal</td><td>CDI = 1 − det(M_sim)</td></tr>
             <tr><td>Capas de similitud</td><td>Una capa</td><td>TF-IDF + Embeddings simultáneas</td></tr>
-            <tr><td>Perspectiva outlier</td><td>No expuesta</td><td>PMD explícita con nota clínica</td></tr>
+            <tr><td>Perspectiva outlier</td><td>No expuesta</td><td>SOLO explícita con nota clínica</td></tr>
             <tr><td>Fusión</td><td>Votación/promedio</td><td>Síntesis preservando divergencias</td></tr>
             <tr><td>Dominio</td><td>Diagnóstico médico general</td><td>Psicoterapia / salud mental</td></tr>
           </tbody>
@@ -657,7 +657,7 @@ const PAGE_TITLES = {
   home:    "Nueva consulta",
   models:  "Directorio de modelos",
   history: "Historial de consultas",
-  about:   "Metodología CRML"
+  about:   "Metodología CHORUS"
 };
 
 function showPage(name) {
@@ -760,7 +760,11 @@ async function runAnalysis() {
     displayResults(data);
     document.getElementById("results-section").style.display = "block";
     document.getElementById("results-section").scrollIntoView({ behavior: "smooth", block: "start" });
-    showStatus(`Análisis completado — ${data.models_count} modelo(s) procesados`, "success");
+    const failed = data.models_failed || [];
+    const statusMsg = failed.length > 0
+      ? `Análisis completado — ${data.models_count}/${data.models_requested} modelo(s) respondieron (${failed.length} excluido(s) por error)`
+      : `Análisis completado — ${data.models_count} modelo(s) procesados`;
+    showStatus(statusMsg, failed.length > 0 ? "info" : "success");
   } catch (e) {
     showStatus(`Error: ${e.message}`, "error");
   } finally {
@@ -774,7 +778,7 @@ function displayResults(data) {
   const cd = data.consenso_data || {};
   renderCDI(cd);
   renderBars(cd);
-  renderPerspectivaMinoritaria(cd);
+  renderSolo(cd);
   renderFusion(data);
   renderReport(data);
   renderResponses(data, cd);
@@ -853,7 +857,7 @@ function renderBars(cd) {
   if (!items.length) { container.innerHTML = `<p style="color:var(--muted)">Sin datos de consenso</p>`; return; }
 
   const masConsensuado = cd.modelo_mas_consensuado;
-  const pmModelo       = cd.perspectiva_minoritaria?.modelo;
+  const pmModelo       = cd.solo?.modelo;
   const cg             = cd.consenso_global || 0;
 
   let html = `
@@ -870,7 +874,7 @@ function renderBars(cd) {
     const esPM    = item.modelo === pmModelo;
     const color   = v >= 0.70 ? "#16a34a" : v >= 0.40 ? "#d97706" : "#f59e0b";
     const badge   = esTop1 ? `<span class="badge top1">MÁS CONSENSUADO</span>`
-                  : esPM   ? `<span class="badge disidente">⚑ MINORITARIO</span>` : "";
+                  : esPM   ? `<span class="badge disidente">⚑ SOLO</span>` : "";
     html += `
       <div class="bar-row">
         <div class="bar-label">${shortName(item.modelo)} ${badge}</div>
@@ -881,11 +885,11 @@ function renderBars(cd) {
   container.innerHTML = html;
 }
 
-/* ── PMD ────────────────────────────────────────────────── */
-function renderPerspectivaMinoritaria(cd) {
+/* ── Voz Solista (SOLO) ─────────────────────────────────── */
+function renderSolo(cd) {
   const sec  = document.getElementById("pm-section");
   const cont = document.getElementById("pm-container");
-  const pm   = cd.perspectiva_minoritaria;
+  const pm   = cd.solo;
   if (!pm || !pm.respuesta) { sec.style.display = "none"; return; }
   sec.style.display = "block";
   cont.innerHTML = `
@@ -922,11 +926,21 @@ function renderFusion(data) {
 
 /* ── Reporte ────────────────────────────────────────────── */
 function renderReport(data) {
-  const cont = document.getElementById("report-container");
-  const cd   = data.consenso_data || {};
-  const cdi  = cd.cdi || {};
-  const n    = data.results?.length || 0;
-  const ts   = data.timestamp ? new Date(data.timestamp).toLocaleTimeString("es-ES") : "";
+  const cont   = document.getElementById("report-container");
+  const cd     = data.consenso_data || {};
+  const cdi    = cd.cdi || {};
+  const n      = data.results?.length || 0;
+  const ts     = data.timestamp ? new Date(data.timestamp).toLocaleTimeString("es-ES") : "";
+  const failed = data.models_failed || [];
+
+  const failedBlock = failed.length > 0 ? `
+    <div style="margin-top:14px; padding:10px 14px; border-radius:6px; background:#fef9c3; border:1px solid #fde047; color:#713f12; font-size:0.83rem;">
+      <strong>⚠ ${failed.length} modelo(s) excluidos del análisis por no responder:</strong>
+      <ul style="margin:6px 0 0 16px; line-height:1.7">
+        ${failed.map(f => `<li><code style="font-size:0.78rem">${escHtml(shortName(f.model_name))}</code> — <span style="opacity:.8">${escHtml(f.reason)}</span></li>`).join("")}
+      </ul>
+    </div>` : "";
+
   cont.innerHTML = `
     <div class="stat-row">
       <div class="stat-box">
@@ -941,12 +955,18 @@ function renderReport(data) {
         <div class="stat-num">${n}</div>
         <div class="stat-lbl">Modelos analizados</div>
       </div>
+      ${data.models_requested && data.models_requested !== n ? `
+      <div class="stat-box">
+        <div class="stat-num" style="color:var(--amber)">${data.models_requested - n}</div>
+        <div class="stat-lbl">Excluidos por error</div>
+      </div>` : ""}
       ${ts ? `<div class="stat-box"><div class="stat-num" style="font-size:1.1rem">${ts}</div><div class="stat-lbl">Hora del análisis</div></div>` : ""}
     </div>
     ${cd.modelo_mas_consensuado ? `<p style="font-size:0.85rem;margin-top:8px">Modelo más consensuado: <strong>${shortName(cd.modelo_mas_consensuado)}</strong></p>` : ""}
     <p style="font-size:0.8rem;color:${cd.embedding_disponible?'var(--green)':'var(--muted)'};margin-top:4px">
       ${cd.embedding_disponible ? "✓ Análisis semántico de doble capa activo (TF-IDF + Embeddings)" : "Análisis léxico TF-IDF — activa embeddings añadiendo OPENAI_API_KEY"}
-    </p>`;
+    </p>
+    ${failedBlock}`;
 }
 
 /* ── Respuestas individuales ────────────────────────────── */
@@ -958,7 +978,7 @@ function renderResponses(data, cd) {
   }
   const cmap          = {};
   const masConsensuado = cd.modelo_mas_consensuado;
-  const pmModelo       = cd.perspectiva_minoritaria?.modelo;
+  const pmModelo       = cd.solo?.modelo;
   (cd.consensos_individuales || []).forEach(c => { cmap[c.modelo] = c.consenso_individual; });
 
   const sorted = [...data.results].sort((a, b) => (cmap[b.model_name]||0) - (cmap[a.model_name]||0));
@@ -969,7 +989,7 @@ function renderResponses(data, cd) {
     const esPM   = r.model_name === pmModelo;
     const cls    = esTop1 ? "top1" : esPM ? "disidente" : i < 3 ? "top3" : "";
     const badge  = esTop1 ? `<span class="badge top1">MÁS CONSENSUADO</span>`
-                 : esPM   ? `<span class="badge disidente">⚑ MINORITARIO</span>`
+                 : esPM   ? `<span class="badge disidente">⚑ SOLO</span>`
                  : i < 3  ? `<span class="badge top3">TOP 3</span>` : "";
     const ts     = r.timestamp ? new Date(r.timestamp).toLocaleTimeString("es-ES") : "";
     return `

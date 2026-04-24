@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHORUS — Clinical Heterogeneous Orchestration for Reasoning Under Supervision</title>
+  <meta name="description" content="Sistema multi-LLM para apoyo al razonamiento clínico en psicoterapia. InnoTep Research Group · Universidad Politécnica de Madrid.">
+
+  <!-- Bulma base (same framework as InnoTep) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+
+  <!-- Fonts: Fraunces display + Inter Tight body + JetBrains Mono for code/data -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    /* ============================================================
+       CHORUS — Structural fallbacks (in case Bulma fails to load)
+       These replicate the minimal Bulma classes we actually use,
+       so the site works end-to-end even if the CDN is blocked.
+       ============================================================ */
+    .container {
+      max-width: 1024px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+      width: 100%;
+    }
+    .container.is-max-desktop { max-width: 1024px; }
+    @media (min-width: 1216px) {
+      .container { max-width: 1152px; }
+    }
+
+    .columns {
+      display: flex;
+      flex-wrap: wrap;
+      margin-left: -0.75rem;
+      margin-right: -0.75rem;
+    }
+    .columns.is-vcentered { align-items: center; }
+    .column {
+      flex: 1 1 0;
+      padding: 0.75rem;
+      box-sizing: border-box;
+    }
+    .column.is-7 { flex: 0 0 58.333%; max-width: 58.333%; box-sizing: border-box; }
+    .column.is-5 { flex: 0 0 41.666%; max-width: 41.666%; box-sizing: border-box; }
+    @media (max-width: 900px) {
+      .column.is-7, .column.is-5 { flex: 0 0 100%; max-width: 100%; }
+    }
+
+    .is-flex { display: flex !important; }
+    .is-justify-content-space-between { justify-content: space-between !important; }
+    .is-align-items-center { align-items: center !important; }
+
+    /* ============================================================
+       CHORUS — Design tokens
+       Paleta extraída de innotep.github.io (Bulma + custom)
+       ============================================================ */
+    :root {
+      --chorus-coral: #f46e7f;          /* InnoTep accent, also used for dissent visualizations */
+      --chorus-coral-dark: #e0596b;
+      --chorus-coral-soft: #fde8eb;
+      --chorus-navy: #444f60;           /* InnoTep footer */
+      --chorus-navy-dark: #323a47;
+      --chorus-navy-deep: #1e2430;
+      --chorus-mist: #eff4f7;           /* InnoTep light section */
+      --chorus-paper: #fbfaf7;          /* warm paper tone for content */
+      --chorus-ink: #2a2d33;
+      --chorus-ink-soft: #5a6070;
+      --chorus-ink-mute: #8a8f9c;
+      --chorus-rule: #e2e6ec;
+      --chorus-gold: #b89968;           /* for CDI high / emphasis */
+      --chorus-sage: #6b9080;           /* for consensus / low CDI */
+
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 16px;
+
+      --shadow-sm: 0 1px 2px rgba(30,36,48,0.06), 0 1px 1px rgba(30,36,48,0.04);
+      --shadow-md: 0 4px 16px rgba(30,36,48,0.08), 0 1px 3px rgba(30,36,48,0.04);
+      --shadow-lg: 0 20px 50px rgba(30,36,48,0.12), 0 4px 12px rgba(30,36,48,0.06);
+    }
+
+    /* ============================================================
+       Base overrides
+       ============================================================ */
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      color: var(--chorus-ink);
+      background: var(--chorus-paper);
+      font-feature-settings: 'ss01', 'cv11';
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+    }
+
+    /* Bulma overrides for a more refined base */
+    .title, .subtitle, h1, h2, h3, h4, h5, h6 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: -0.015em;
+      color: var(--chorus-ink);
+    }
+    .title strong, h1 strong, h2 strong, h3 strong { font-weight: 600; }
+
+    /* InnoTep-style accent divider */
+    .divider {
+      height: 3px;
+      width: 60px;
+      background: var(--chorus-coral);
+      border-radius: 50px;
+      margin: 1.5rem 0;
+    }
+    .divider.is-centered { margin: 1.5rem auto; }
+
+    /* ============================================================
+       NAVBAR
+       ============================================================ */
+    .chorus-navbar {
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: saturate(180%) blur(14px);
+      -webkit-backdrop-filter: saturate(180%) blur(14px);
+      border-bottom: 1px solid var(--chorus-rule);
+      position: sticky; top: 0; z-index: 40;
+      padding: 0.75rem 0;
+    }
+    .chorus-navbar .brand {
+      display: flex; align-items: center; gap: 0.75rem;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.35rem;
+      letter-spacing: 0.06em;
+      color: var(--chorus-ink);
+      text-decoration: none;
+    }
+    .chorus-navbar .brand:hover { color: var(--chorus-coral); }
+    .chorus-navbar .brand .brand-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--chorus-navy);
+      position: relative;
+    }
+    .chorus-navbar .brand .brand-mark::before,
+    .chorus-navbar .brand .brand-mark::after {
+      content: '';
+      position: absolute;
+      width: 3px; height: 14px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 3px;
+    }
+    .chorus-navbar .brand .brand-mark::before { transform: rotate(-15deg) translateX(-6px); }
+    .chorus-navbar .brand .brand-mark::after  { transform: rotate(15deg)  translateX(6px); background: var(--chorus-coral); }
+    .chorus-navbar .nav-links {
+      display: flex; gap: 2rem; align-items: center;
+    }
+    .chorus-navbar .nav-links a {
+      color: var(--chorus-ink-soft);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      position: relative;
+      padding: 0.25rem 0;
+      transition: color 0.2s ease;
+    }
+    .chorus-navbar .nav-links a:hover { color: var(--chorus-coral); }
+    .chorus-navbar .nav-links a::after {
+      content: ''; position: absolute; left: 0; bottom: -2px;
+      width: 0; height: 2px; background: var(--chorus-coral);
+      transition: width 0.3s ease;
+    }
+    .chorus-navbar .nav-links a:hover::after { width: 100%; }
+    .chorus-navbar .nav-links .lang-toggle {
+      color: var(--chorus-ink-mute);
+      border-left: 1px solid var(--chorus-rule);
+      padding-left: 1.5rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ============================================================
+       HERO
+       ============================================================ */
+    .hero-chorus {
+      padding: 6rem 0 5rem;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 85% 15%, rgba(244,110,127,0.08) 0%, transparent 45%),
+        radial-gradient(ellipse at 15% 85%, rgba(68,79,96,0.06) 0%, transparent 45%),
+        var(--chorus-paper);
+    }
+    .hero-chorus::before {
+      /* subtle musical staff lines in background — chorus metaphor */
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(to bottom, transparent 0, transparent 38px, rgba(68,79,96,0.04) 38px, rgba(68,79,96,0.04) 39px, transparent 39px),
+        linear-gradient(to bottom, transparent 0, transparent 58px, rgba(68,79,96,0.04) 58px, rgba(68,79,96,0.04) 59px, transparent 59px),
+        linear-gradient(to bottom, transparent 0, transparent 78px, rgba(68,79,96,0.04) 78px, rgba(68,79,96,0.04) 79px, transparent 79px);
+      background-size: 100% 120px;
+      background-position: 0 60%;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .hero-chorus .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--chorus-coral);
+      margin-bottom: 1.75rem;
+    }
+    .hero-chorus .eyebrow::before {
+      content: ''; width: 20px; height: 1px; background: var(--chorus-coral);
+    }
+
+    .hero-chorus h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 5vw, 4.2rem);
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: var(--chorus-ink);
+      font-weight: 400;
+      max-width: 780px;
+      font-variation-settings: "opsz" 144;
+    }
+    .hero-chorus h1 em {
+      font-style: italic;
+      color: var(--chorus-coral);
+      font-weight: 400;
+    }
+    .hero-chorus h1 strong {
+      font-weight: 600;
+    }
+
+    .hero-chorus .lede {
+      font-size: 1.2rem;
+      color: var(--chorus-ink-soft);
+      max-width: 620px;
+      margin-top: 1.75rem;
+      line-height: 1.55;
+    }
+
+    .hero-cta-row {
+      display: flex;
+      gap: 0.85rem;
+      margin-top: 2.5rem;
+      flex-wrap: wrap;
+    }
+    .btn-chorus {
+      display: inline-flex; align-items: center; gap: 0.6rem;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.95rem;
+      padding: 0.85rem 1.5rem;
+      border-radius: 50px;
+      transition: all 0.25s ease;
+      text-decoration: none;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+    }
+    .btn-chorus.is-primary {
+      background: var(--chorus-navy);
+      color: #fff;
+    }
+    .btn-chorus.is-primary:hover {
+      background: var(--chorus-coral);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    .btn-chorus.is-ghost {
+      background: transparent;
+      color: var(--chorus-ink);
+      border-color: var(--chorus-rule);
+    }
+    .btn-chorus.is-ghost:hover {
+      border-color: var(--chorus-coral);
+      color: var(--chorus-coral);
+    }
+    .btn-chorus i { font-size: 0.85rem; }
+
+    /* CDI visual: decorative panel on the right of hero showing the metaphor */
+    .hero-visual {
+      position: relative;
+      height: 420px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-visual svg { width: 100%; height: 100%; max-width: 500px; }
+    /* SVG stroke animation */
+    @keyframes voice-enter {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .voice-node { animation: voice-enter 0.8s ease forwards; opacity: 0; }
+    .voice-node:nth-child(1) { animation-delay: 0.1s; }
+    .voice-node:nth-child(2) { animation-delay: 0.25s; }
+    .voice-node:nth-child(3) { animation-delay: 0.4s; }
+    .voice-node:nth-child(4) { animation-delay: 0.55s; }
+    .voice-node:nth-child(5) { animation-delay: 0.7s; }
+
+    @keyframes solo-pulse {
+      0%, 100% { filter: drop-shadow(0 0 0 rgba(244,110,127,0)); }
+      50% { filter: drop-shadow(0 0 14px rgba(244,110,127,0.5)); }
+    }
+    .solo-highlight { animation: solo-pulse 3s ease-in-out infinite; }
+
+    /* Section base */
+    .section-chorus {
+      padding: 6rem 0;
+    }
+    .section-chorus.alt {
+      background: var(--chorus-mist);
+    }
+    .section-chorus h2 {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      max-width: 720px;
+    }
+    .section-chorus h2 em {
+      font-style: italic;
+      color: var(--chorus-coral);
+    }
+    .section-chorus .section-kicker {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--chorus-ink-mute);
+      margin-bottom: 1rem;
+    }
+    .section-chorus .section-lede {
+      font-size: 1.05rem;
+      color: var(--chorus-ink-soft);
+      max-width: 640px;
+      margin-top: 1.25rem;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="chorus-navbar">
+    <div class="container is-max-desktop">
+      <div class="is-flex is-justify-content-space-between is-align-items-center">
+        <a href="#top" class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>CHORUS</span>
+        </a>
+        <div class="nav-links">
+          <a href="#system">Sistema</a>
+          <a href="#cases">Casos</a>
+          <a href="#paper">Publicación</a>
+          <a href="#team">Equipo</a>
+          <a href="#contact">Contacto</a>
+          <a href="#" class="lang-toggle">EN</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero-chorus" id="top">
+    <div class="container is-max-desktop">
+      <div class="columns is-vcentered">
+        <div class="column is-7">
+          <div class="eyebrow">InnoTep · Universidad Politécnica de Madrid</div>
+          <h1>
+            El <em>disenso</em> entre modelos<br>
+            como <strong>señal clínica</strong>,<br>
+            no como ruido a suprimir.
+          </h1>
+          <p class="lede">
+            CHORUS orquesta múltiples modelos de lenguaje heterogéneos sobre un mismo caso psicoterapéutico y preserva sus desacuerdos. Lo que otros sistemas colapsan en una respuesta única, CHORUS lo expone como mapa de incertidumbre diagnóstica para el terapeuta.
+          </p>
+          <div class="hero-cta-row">
+            <a href="#cases" class="btn-chorus is-primary">
+              <i class="fa-solid fa-folder-open"></i> Explorar casos
+            </a>
+            <a href="#system" class="btn-chorus is-ghost">
+              <i class="fa-solid fa-diagram-project"></i> Cómo funciona
+            </a>
+            <a href="#paper" class="btn-chorus is-ghost">
+              <i class="fa-solid fa-file-lines"></i> Paper (arXiv)
+            </a>
+          </div>
+        </div>
+        <div class="column is-5">
+          <div class="hero-visual">
+            <!-- Chorus metaphor: 5 voices, one dissenting -->
+            <svg viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg" aria-label="Representación del coro de modelos con una voz disidente">
+              <defs>
+                <radialGradient id="consensus" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#444f60" stop-opacity="0.06"/>
+                  <stop offset="100%" stop-color="#444f60" stop-opacity="0"/>
+                </radialGradient>
+                <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="0.5"/>
+                </filter>
+              </defs>
+
+              <!-- consensus cloud -->
+              <circle cx="270" cy="200" r="160" fill="url(#consensus)"/>
+
+              <!-- Consensus connecting lines (4 voices in agreement) -->
+              <g stroke="#444f60" stroke-opacity="0.22" stroke-width="1" fill="none">
+                <line x1="200" y1="120" x2="340" y2="160"/>
+                <line x1="200" y1="120" x2="310" y2="280"/>
+                <line x1="200" y1="120" x2="220" y2="260"/>
+                <line x1="340" y1="160" x2="310" y2="280"/>
+                <line x1="340" y1="160" x2="220" y2="260"/>
+                <line x1="310" y1="280" x2="220" y2="260"/>
+              </g>
+
+              <!-- Dissent line: dashed, to SOLO -->
+              <line x1="270" y1="200" x2="80" y2="340" stroke="#f46e7f" stroke-width="1.5" stroke-dasharray="4 5" opacity="0.7"/>
+
+              <!-- 4 consensus voices -->
+              <g class="voice-node">
+                <circle cx="200" cy="120" r="22" fill="#fff" stroke="#444f60" stroke-width="1.8"/>
+                <text x="200" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444f60" font-weight="500">m₁</text>
+              </g>
+              <g class="voice-node">
+                <circle cx="340" cy="160" r="22" fill="#fff" stroke="#444f60" stroke-width="1.8"/>
+                <text x="340" y="165" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444f60" font-weight="500">m₂</text>
+              </g>
+              <g class="voice-node">
+                <circle cx="310" cy="280" r="22" fill="#fff" stroke="#444f60" stroke-width="1.8"/>
+                <text x="310" y="285" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444f60" font-weight="500">m₃</text>
+              </g>
+              <g class="voice-node">
+                <circle cx="220" cy="260" r="22" fill="#fff" stroke="#444f60" stroke-width="1.8"/>
+                <text x="220" y="265" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444f60" font-weight="500">m₄</text>
+              </g>
+
+              <!-- SOLO voice: dissenter, coral highlighted -->
+              <g class="voice-node solo-highlight">
+                <circle cx="80" cy="340" r="26" fill="#f46e7f" stroke="#f46e7f" stroke-width="2"/>
+                <text x="80" y="345" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#fff" font-weight="600">m*</text>
+              </g>
+
+              <!-- Labels -->
+              <text x="275" y="200" text-anchor="middle" font-family="Fraunces" font-size="13" font-style="italic" fill="#5a6070">consenso</text>
+              <text x="80" y="380" text-anchor="middle" font-family="Fraunces" font-size="13" font-weight="500" fill="#f46e7f">SOLO</text>
+
+              <!-- CDI readout -->
+              <g transform="translate(360, 370)">
+                <rect x="-45" y="-18" width="90" height="36" rx="18" fill="#fff" stroke="#e2e6ec"/>
+                <text x="-30" y="4" text-anchor="start" font-family="JetBrains Mono" font-size="9" fill="#8a8f9c">CDI</text>
+                <text x="18" y="5" text-anchor="middle" font-family="Fraunces" font-size="15" font-weight="600" fill="#f46e7f">0.78</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================================
+       WHAT IS CHORUS
+       ============================================================= -->
+  <style>
+    .what-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 1fr;
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    @media (max-width: 900px) {
+      .what-grid { grid-template-columns: 1fr; }
+    }
+    .what-card {
+      background: #fff;
+      border: 1px solid var(--chorus-rule);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      position: relative;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .what-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+    .what-card .card-num {
+      font-family: var(--font-display);
+      font-size: 2.8rem;
+      font-style: italic;
+      font-weight: 300;
+      color: var(--chorus-coral);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .what-card h3 {
+      font-size: 1.35rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+    .what-card p {
+      color: var(--chorus-ink-soft);
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+    .what-card code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      background: var(--chorus-mist);
+      color: var(--chorus-ink);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .what-card.feature {
+      background: var(--chorus-navy);
+      color: #fff;
+      border-color: var(--chorus-navy);
+    }
+    .what-card.feature h3 { color: #fff; }
+    .what-card.feature p { color: rgba(255,255,255,0.78); }
+    .what-card.feature code { background: rgba(255,255,255,0.12); color: #fde8eb; }
+    .what-card.feature .card-num { color: var(--chorus-coral); }
+  </style>
+
+  <section class="section-chorus" id="what">
+    <div class="container is-max-desktop">
+      <div class="section-kicker">CHORUS · El sistema</div>
+      <h2>De la <em>síntesis que oculta</em><br>al disenso que informa.</h2>
+      <div class="divider"></div>
+      <p class="section-lede">
+        Los sistemas multi-LLM actuales promedian respuestas para producir una única conclusión consolidada. Este gesto &mdash; aparentemente útil &mdash; suprime justo la información más valiosa en los casos complejos: los puntos donde los modelos discrepan. CHORUS invierte el enfoque. Tres contribuciones originales, ausentes del estado del arte.
+      </p>
+
+      <div class="what-grid">
+        <div class="what-card feature">
+          <div class="card-num">01</div>
+          <h3>Clinical Dissent Index</h3>
+          <p>
+            Métrica formal de diversidad diagnóstica definida como <code>CDI = 1 − |det(M_sim)|</code>, donde <code>M_sim</code> es la matriz de similitud coseno entre respuestas del ensemble. Toma valores entre 0 (convergencia total) y 1 (máxima diversidad). Es la primera métrica matemática de disenso aplicable a razonamiento clínico abierto.
+          </p>
+        </div>
+        <div class="what-card">
+          <div class="card-num">02</div>
+          <h3>Voz Solista (SOLO)</h3>
+          <p>
+            El sistema identifica explícitamente el modelo <code>m*</code> con mínima similitud respecto al resto del coro y expone su respuesta completa como entidad clínica diferenciada. Operacionaliza el principio MEDLEY de preservación de minorías con un criterio de selección formal.
+          </p>
+        </div>
+        <div class="what-card">
+          <div class="card-num">03</div>
+          <h3>Análisis léxico-semántico dual</h3>
+          <p>
+            Dos capas paralelas: similitud TF-IDF (vocabulario) y embeddings semánticos (significado). Los pares con alta similitud léxica pero baja similitud semántica revelan modelos que usan las mismas palabras para hipótesis diagnósticas diferentes &mdash; una divergencia invisible al análisis convencional.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================================
+       HOW IT WORKS
+       ============================================================= -->
+  <style>
+    .flow-container {
+      margin-top: 3.5rem;
+      position: relative;
+    }
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      position: relative;
+    }
+    @media (max-width: 900px) {
+      .flow-steps { grid-template-columns: 1fr; }
+    }
+    .flow-steps::before {
+      content: '';
+      position: absolute;
+      top: 42px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: repeating-linear-gradient(to right, var(--chorus-coral) 0 8px, transparent 8px 16px);
+      z-index: 0;
+    }
+    @media (max-width: 900px) {
+      .flow-steps::before { display: none; }
+    }
+    .flow-step {
+      background: var(--chorus-paper);
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    .flow-step .step-circle {
+      width: 84px; height: 84px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid var(--chorus-navy);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-style: italic;
+      font-weight: 400;
+      color: var(--chorus-navy);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.25rem;
+    }
+    .flow-step:nth-child(3) .step-circle {
+      border-color: var(--chorus-coral);
+      color: var(--chorus-coral);
+    }
+    .flow-step h4 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 1.15rem;
+      margin-bottom: 0.5rem;
+    }
+    .flow-step p {
+      color: var(--chorus-ink-soft);
+      font-size: 0.92rem;
+      line-height: 1.55;
+      padding: 0 0.5rem;
+    }
+    .flow-step .step-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--chorus-ink-mute);
+      text-transform: uppercase;
+      margin-top: 0.6rem;
+    }
+  </style>
+
+  <section class="section-chorus alt" id="system">
+    <div class="container is-max-desktop">
+      <div class="section-kicker">Arquitectura · Cómo funciona</div>
+      <h2>Cuatro fases. Un terapeuta<br>en el <em>centro</em> de todas ellas.</h2>
+      <div class="divider"></div>
+      <p class="section-lede">
+        CHORUS no reemplaza el juicio clínico: lo enriquece exponiéndole la incertidumbre estructural del ensemble antes de que sea disimulada por la síntesis.
+      </p>
+
+      <div class="flow-container">
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="step-circle">i</div>
+            <h4>Caso anonimizado</h4>
+            <p>El terapeuta introduce una descripción textual libre del caso, previamente anonimizada según la plantilla del sistema.</p>
+            <div class="step-tag">entrada</div>
+          </div>
+          <div class="flow-step">
+            <div class="step-circle">ii</div>
+            <h4>N modelos heterogéneos</h4>
+            <p>El <em>Ensamblador</em> dispara el mismo prompt a N LLMs en paralelo vía OpenRouter a temperatura 0.4. Respuestas independientes.</p>
+            <div class="step-tag">ensemble</div>
+          </div>
+          <div class="flow-step">
+            <div class="step-circle">iii</div>
+            <h4>CDI + SOLO</h4>
+            <p>El <em>Analizador</em> calcula la matriz de similitud, deriva el CDI y extrae la Voz Solista con su texto íntegro.</p>
+            <div class="step-tag">disenso</div>
+          </div>
+          <div class="flow-step">
+            <div class="step-circle">iv</div>
+            <h4>Síntesis + deliberación</h4>
+            <p>La <em>Fusión</em> integra las voces mayoritarias preservando los puntos de deliberación clínica. El terapeuta decide.</p>
+            <div class="step-tag">salida</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================================
+       CASES GALLERY
+       ============================================================= -->
+  <style>
+    .cases-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+    @media (max-width: 900px) {
+      .cases-grid { grid-template-columns: 1fr; }
+    }
+    .case-card {
+      background: #fff;
+      border: 1px solid var(--chorus-rule);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .case-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--chorus-rule);
+      transition: background 0.3s ease;
+    }
+    .case-card[data-cdi-level="low"]::before { background: var(--chorus-sage); }
+    .case-card[data-cdi-level="moderate"]::before { background: var(--chorus-gold); }
+    .case-card[data-cdi-level="high"]::before { background: #d8796c; }
+    .case-card[data-cdi-level="max"]::before { background: var(--chorus-coral); }
+
+    .case-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--chorus-coral);
+    }
+    .case-card .case-tag {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--chorus-ink-mute);
+      margin-bottom: 0.6rem;
+    }
+    .case-card h3 {
+      font-size: 1.15rem;
+      line-height: 1.3;
+      margin-bottom: 0.75rem;
+      font-weight: 500;
+    }
+    .case-card .case-excerpt {
+      font-size: 0.92rem;
+      color: var(--chorus-ink-soft);
+      line-height: 1.55;
+      margin-bottom: 1.25rem;
+      min-height: 72px;
+    }
+    .case-card .case-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1rem;
+      border-top: 1px solid var(--chorus-rule);
+    }
+    .case-card .case-meta .cdi-readout {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 500;
+    }
+    .case-card[data-cdi-level="low"] .cdi-readout { color: var(--chorus-sage); }
+    .case-card[data-cdi-level="moderate"] .cdi-readout { color: var(--chorus-gold); }
+    .case-card[data-cdi-level="high"] .cdi-readout { color: #d8796c; }
+    .case-card[data-cdi-level="max"] .cdi-readout { color: var(--chorus-coral); }
+
+    .case-card .cdi-readout small {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--chorus-ink-mute);
+      display: block;
+      letter-spacing: 0.1em;
+      margin-top: -2px;
+    }
+    .case-card .chevron {
+      color: var(--chorus-ink-mute);
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
+    .case-card:hover .chevron {
+      transform: translateX(4px);
+      color: var(--chorus-coral);
+    }
+
+    /* "Try your own case" card */
+    .case-card.is-own {
+      background: var(--chorus-navy);
+      color: #fff;
+      border-color: var(--chorus-navy);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .case-card.is-own::before { background: var(--chorus-coral); }
+    .case-card.is-own h3 { color: #fff; }
+    .case-card.is-own .case-excerpt { color: rgba(255,255,255,0.72); }
+    .case-card.is-own .case-meta { border-top-color: rgba(255,255,255,0.15); }
+    .case-card.is-own .cdi-readout { color: var(--chorus-coral); font-size: 1.05rem; }
+    .case-card.is-own:hover { background: var(--chorus-navy-dark); }
+
+    /* Filters */
+    .case-filters {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 2.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .case-filters .filter-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--chorus-ink-mute);
+      margin-right: 0.75rem;
+    }
+    .filter-chip {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      background: transparent;
+      border: 1px solid var(--chorus-rule);
+      color: var(--chorus-ink-soft);
+      padding: 0.4rem 0.95rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .filter-chip:hover { border-color: var(--chorus-coral); color: var(--chorus-coral); }
+    .filter-chip.is-active {
+      background: var(--chorus-navy);
+      color: #fff;
+      border-color: var(--chorus-navy);
+    }
+
+    /* Empty slot */
+    .case-card.is-placeholder {
+      background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(226,230,236,0.4) 10px, rgba(226,230,236,0.4) 11px);
+      border-style: dashed;
+      border-color: var(--chorus-rule);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 250px;
+      cursor: default;
+    }
+    .case-card.is-placeholder::before { display: none; }
+    .case-card.is-placeholder:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--chorus-rule);
+    }
+    .case-card.is-placeholder .placeholder-icon {
+      font-size: 1.8rem;
+      color: var(--chorus-ink-mute);
+      margin-bottom: 1rem;
+    }
+    .case-card.is-placeholder p {
+      font-family: var(--font-display);
+      font-style: italic;
+      color: var(--chorus-ink-mute);
+      font-size: 0.95rem;
+    }
+  </style>
+
+  <section class="section-chorus" id="cases">
+    <div class="container is-max-desktop">
+      <div class="section-kicker">Galería · Casos analizados</div>
+      <h2>Explorar casos reales analizados<br>con <em>CHORUS</em>.</h2>
+      <div class="divider"></div>
+      <p class="section-lede">
+        Casos anonimizados de psicoterapia individual, de pareja y familiar procesados por el sistema. Cada tarjeta muestra el Clinical Dissent Index resultante y permite explorar en detalle el mapa de consenso, la Voz Solista y la síntesis integrada.
+      </p>
+
+      <div class="case-filters">
+        <span class="filter-label">Filtrar</span>
+        <button class="filter-chip is-active" data-filter="all">Todos</button>
+        <button class="filter-chip" data-filter="individual">Individual</button>
+        <button class="filter-chip" data-filter="couple">Pareja</button>
+        <button class="filter-chip" data-filter="family">Familia</button>
+        <span class="filter-label" style="margin-left: 1.5rem">CDI</span>
+        <button class="filter-chip" data-filter="low">Bajo</button>
+        <button class="filter-chip" data-filter="moderate">Moderado</button>
+        <button class="filter-chip" data-filter="high">Alto</button>
+        <button class="filter-chip" data-filter="max">Máximo</button>
+      </div>
+
+      <div class="cases-grid" id="cases-grid">
+        <!-- Case 8 — the illustrative one from the paper -->
+        <div class="case-card" data-cdi-level="max" data-type="family" data-case="8">
+          <div class="case-tag">Caso 08 · Terapia familiar</div>
+          <h3>Paciente identificada adolescente con sintomatología difusa</h3>
+          <p class="case-excerpt">Familia nuclear de cuatro miembros acude por problemas de comportamiento en la hija mayor. Dinámica parental rígida, hermano menor en rol de «niño invisible».</p>
+          <div class="case-meta">
+            <div class="cdi-readout">0.99 <small>máximo</small></div>
+            <span class="chevron"><i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+
+        <!-- More cases (placeholders with realistic info) -->
+        <div class="case-card" data-cdi-level="high" data-type="couple" data-case="3">
+          <div class="case-tag">Caso 03 · Terapia de pareja</div>
+          <h3>Crisis de pareja tras nacimiento del primer hijo</h3>
+          <p class="case-excerpt">Pareja de 35-40 años consulta 8 meses después del parto. Descenso drástico de la intimidad; ella refiere agotamiento, él refiere desconexión emocional progresiva.</p>
+          <div class="case-meta">
+            <div class="cdi-readout">0.72 <small>alto</small></div>
+            <span class="chevron"><i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+
+        <div class="case-card" data-cdi-level="moderate" data-type="individual" data-case="5">
+          <div class="case-tag">Caso 05 · Individual</div>
+          <h3>Ansiedad generalizada en profesional altamente cualificado</h3>
+          <p class="case-excerpt">Varón, 42 años, directivo. Síntomas físicos predominantes (taquicardia, insomnio de conciliación) sin disparador identificable. Sin antecedentes psiquiátricos previos.</p>
+          <div class="case-meta">
+            <div class="cdi-readout">0.48 <small>moderado</small></div>
+            <span class="chevron"><i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+
+        <div class="case-card" data-cdi-level="low" data-type="individual" data-case="1">
+          <div class="case-tag">Caso 01 · Individual</div>
+          <h3>Duelo complicado tras pérdida parental</h3>
+          <p class="case-excerpt">Mujer, 51 años, consulta 14 meses tras fallecimiento de la madre. Imposibilidad para retomar rutina laboral, pensamientos intrusivos, evitación de lugares compartidos.</p>
+          <div class="case-meta">
+            <div class="cdi-readout">0.18 <small>bajo</small></div>
+            <span class="chevron"><i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+
+        <div class="case-card" data-cdi-level="high" data-type="individual" data-case="7">
+          <div class="case-tag">Caso 07 · Individual</div>
+          <h3>Adolescente con autolesiones y dinámica familiar conflictiva</h3>
+          <p class="case-excerpt">Mujer, 16 años, acude derivada desde atención primaria. Autolesiones superficiales recientes. Convivencia con madre y pareja de madre; padre biológico ausente.</p>
+          <div class="case-meta">
+            <div class="cdi-readout">0.81 <small>alto</small></div>
+            <span class="chevron"><i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+
+        <div class="case-card" data-cdi-level="moderate" data-type="family" data-case="4">
+          <div class="case-tag">Caso 04 · Terapia familiar</div>
+          <h3>Familia reconstituida con dificultades de integración</h3>
+          <p class="case-excerpt">Pareja con hijos previos de ambos. Convivencia de 2 años. Conflicto entre los hijos adolescentes de él y la hija pre-adolescente de ella. Parentalización visible.</p>
+          <div class="case-meta">
+            <div class="cdi-readout">0.54 <small>moderado</small></div>
+            <span class="chevron"><i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+
+        <!-- Placeholders — casos por subir -->
+        <div class="case-card is-placeholder">
+          <i class="fa-solid fa-plus placeholder-icon"></i>
+          <p>Caso 09 · próximamente</p>
+        </div>
+        <div class="case-card is-placeholder">
+          <i class="fa-solid fa-plus placeholder-icon"></i>
+          <p>Caso 10 · próximamente</p>
+        </div>
+
+        <!-- Own case CTA -->
+        <div class="case-card is-own" id="own-case-cta">
+          <div>
+            <div class="case-tag" style="color: var(--chorus-coral)">Tu propio caso</div>
+            <h3>Analiza un caso clínico con CHORUS</h3>
+            <p class="case-excerpt">Introduce la descripción anonimizada de tu caso y recibe el mapa de consenso-disenso, el SOLO y la síntesis integrada en minutos.</p>
+          </div>
+          <div class="case-meta">
+            <div class="cdi-readout">Abrir analizador</div>
+            <span class="chevron"><i class="fa-solid fa-arrow-right" style="color: var(--chorus-coral)"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================================
+       CASE DETAIL MODAL
+       ============================================================= -->
+  <style>
+    .case-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(30, 36, 48, 0.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      padding: 2rem 1rem;
+      overflow-y: auto;
+      animation: fade-in 0.3s ease;
+    }
+    .case-modal.is-open { display: block; }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .case-modal .modal-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--chorus-paper);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(30,36,48,0.3);
+      animation: slide-up 0.4s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    @keyframes slide-up {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-header {
+      background: var(--chorus-navy);
+      color: #fff;
+      padding: 2rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .modal-header .case-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--chorus-coral);
+      margin-bottom: 0.5rem;
+    }
+    .modal-header h3 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #fff;
+      line-height: 1.3;
+      max-width: 640px;
+    }
+    .close-btn {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: none;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+    .close-btn:hover { background: var(--chorus-coral); }
+
+    .modal-body {
+      padding: 2.5rem;
+    }
+
+    /* CDI banner */
+    .cdi-banner {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 2rem;
+      align-items: center;
+      padding: 1.5rem 2rem;
+      background: #fff;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--chorus-rule);
+      border-left: 4px solid var(--chorus-coral);
+      margin-bottom: 2rem;
+    }
+    .cdi-banner .cdi-big {
+      font-family: var(--font-display);
+      font-size: 3.5rem;
+      font-weight: 500;
+      line-height: 1;
+      color: var(--chorus-coral);
+    }
+    .cdi-banner .cdi-level {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--chorus-ink-mute);
+      margin-bottom: 0.4rem;
+    }
+    .cdi-banner .cdi-interp {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      color: var(--chorus-ink);
+      font-style: italic;
+      line-height: 1.4;
+    }
+    .cdi-banner .entropy {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--chorus-ink-soft);
+    }
+    .cdi-banner .entropy strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      color: var(--chorus-ink);
+      font-weight: 500;
+    }
+
+    /* Section inside modal */
+    .modal-section {
+      margin-bottom: 2.5rem;
+    }
+    .modal-section-title {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--chorus-coral);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .modal-section-title::before {
+      content: '';
+      width: 16px; height: 1px;
+      background: var(--chorus-coral);
+    }
+    .modal-section h4 {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
+    /* Consensus map (mini-matrix of bars) */
+    .consensus-list {
+      display: grid;
+      gap: 0.5rem;
+    }
+    .consensus-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 60px;
+      gap: 1rem;
+      align-items: center;
+      padding: 0.55rem 0.85rem;
+      background: #fff;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--chorus-rule);
+      font-size: 0.92rem;
+    }
+    .consensus-row .model-name {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--chorus-ink);
+    }
+    .consensus-row .bar-track {
+      height: 8px;
+      background: var(--chorus-mist);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .consensus-row .bar-fill {
+      height: 100%;
+      background: var(--chorus-sage);
+      border-radius: 4px;
+      transition: width 0.8s cubic-bezier(0.3, 0.7, 0.3, 1);
+    }
+    .consensus-row.is-solo .bar-fill { background: var(--chorus-coral); }
+    .consensus-row .score {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--chorus-ink-soft);
+      text-align: right;
+    }
+    .consensus-row.is-solo {
+      border-color: var(--chorus-coral);
+      background: var(--chorus-coral-soft);
+    }
+    .consensus-row.is-solo .model-name {
+      color: var(--chorus-coral-dark);
+      font-weight: 500;
+    }
+    .solo-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: var(--chorus-coral);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-left: 6px;
+    }
+
+    /* SOLO card (the dissenting voice full response) */
+    .solo-card {
+      background: linear-gradient(135deg, #fff 0%, var(--chorus-coral-soft) 100%);
+      border: 1.5px solid var(--chorus-coral);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      position: relative;
+    }
+    .solo-card::before {
+      content: 'SOLO';
+      position: absolute;
+      top: -12px;
+      left: 2rem;
+      background: var(--chorus-coral);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-weight: 500;
+    }
+    .solo-card .solo-model {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--chorus-ink-soft);
+      margin-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(244,110,127,0.3);
+    }
+    .solo-card .solo-content {
+      font-family: var(--font-display);
+      font-size: 1.02rem;
+      line-height: 1.7;
+      color: var(--chorus-ink);
+    }
+    .solo-card .solo-content p { margin-bottom: 0.85rem; }
+    .solo-card .solo-note {
+      margin-top: 1.5rem;
+      padding: 0.85rem 1rem;
+      background: rgba(255,255,255,0.6);
+      border-left: 3px solid var(--chorus-coral);
+      font-size: 0.9rem;
+      color: var(--chorus-ink-soft);
+      font-style: italic;
+    }
+
+    /* Synthesis section */
+    .synthesis-card {
+      background: #fff;
+      border: 1px solid var(--chorus-rule);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+    }
+    .synthesis-card .synth-heading {
+      font-family: var(--font-display);
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+      color: var(--chorus-navy);
+    }
+    .synthesis-card p {
+      font-size: 0.98rem;
+      line-height: 1.65;
+      color: var(--chorus-ink);
+      margin-bottom: 1rem;
+    }
+    .synthesis-card .deliberation-block {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: var(--chorus-mist);
+      border-radius: var(--radius-sm);
+      border-left: 3px solid var(--chorus-gold);
+    }
+    .synthesis-card .deliberation-block .label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--chorus-gold);
+      margin-bottom: 0.5rem;
+    }
+  </style>
+
+  <div class="case-modal" id="case-modal" role="dialog" aria-modal="true" aria-labelledby="case-modal-title">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <div>
+          <div class="case-tag" id="case-modal-tag">Caso 08 · Terapia familiar</div>
+          <h3 id="case-modal-title">Paciente identificada adolescente con sintomatología difusa</h3>
+        </div>
+        <button class="close-btn" onclick="closeCaseModal()" aria-label="Cerrar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="case-modal-body">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       PAPER SECTION
+       ============================================================= -->
+  <style>
+    .paper-block {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 3rem;
+      margin-top: 3rem;
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      .paper-block { grid-template-columns: 1fr; }
+    }
+    .paper-preview {
+      background: #fff;
+      border: 1px solid var(--chorus-rule);
+      border-radius: var(--radius-md);
+      padding: 2.5rem;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      transform: rotate(-1.2deg);
+      transition: transform 0.4s ease;
+    }
+    .paper-preview:hover { transform: rotate(0deg); }
+    .paper-preview::before {
+      content: '';
+      position: absolute;
+      inset: -6px -6px -6px -6px;
+      background: var(--chorus-mist);
+      border-radius: var(--radius-md);
+      z-index: -1;
+      transform: rotate(2deg);
+    }
+    .paper-preview .paper-venue {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--chorus-coral);
+      margin-bottom: 1rem;
+    }
+    .paper-preview .paper-title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 500;
+      line-height: 1.3;
+      color: var(--chorus-ink);
+      margin-bottom: 1rem;
+    }
+    .paper-preview .paper-title em { color: var(--chorus-coral); font-style: italic; }
+    .paper-preview .paper-authors {
+      font-size: 0.9rem;
+      color: var(--chorus-ink-soft);
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+    .paper-preview .paper-affil {
+      font-size: 0.8rem;
+      color: var(--chorus-ink-mute);
+      font-style: italic;
+      line-height: 1.4;
+    }
+    .paper-preview .paper-rule {
+      height: 1px;
+      background: var(--chorus-rule);
+      margin: 1.5rem 0;
+    }
+    .paper-preview .paper-abstract {
+      font-size: 0.88rem;
+      color: var(--chorus-ink-soft);
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    .paper-links { display: flex; flex-direction: column; gap: 0.9rem; margin-top: 2rem; }
+    .paper-link {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1.25rem 1.5rem;
+      background: #fff;
+      border: 1px solid var(--chorus-rule);
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      color: var(--chorus-ink);
+      transition: all 0.25s ease;
+    }
+    .paper-link:hover {
+      border-color: var(--chorus-coral);
+      transform: translateX(4px);
+      color: var(--chorus-ink);
+    }
+    .paper-link .link-icon {
+      width: 44px; height: 44px;
+      background: var(--chorus-mist);
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--chorus-navy);
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .paper-link:hover .link-icon {
+      background: var(--chorus-coral);
+      color: #fff;
+    }
+    .paper-link .link-content { flex: 1; }
+    .paper-link .link-title {
+      font-weight: 500;
+      font-size: 1rem;
+      margin-bottom: 0.15rem;
+    }
+    .paper-link .link-sub {
+      font-size: 0.85rem;
+      color: var(--chorus-ink-mute);
+      font-family: var(--font-mono);
+    }
+    .paper-link .link-arrow {
+      color: var(--chorus-ink-mute);
+      transition: transform 0.25s ease;
+    }
+    .paper-link:hover .link-arrow {
+      color: var(--chorus-coral);
+      transform: translateX(4px);
+    }
+  </style>
+
+  <section class="section-chorus alt" id="paper">
+    <div class="container is-max-desktop">
+      <div class="section-kicker">Publicación · Research paper</div>
+      <h2>El fundamento científico<br>de <em>CHORUS</em>.</h2>
+      <div class="divider"></div>
+      <p class="section-lede">
+        El sistema se describe formalmente en un artículo de investigación enviado a <em>JMIR Mental Health</em>. El preprint estará disponible en arXiv en los próximos meses.
+      </p>
+
+      <div class="paper-block">
+        <div class="paper-preview">
+          <div class="paper-venue">JMIR Mental Health · En revisión</div>
+          <div class="paper-title">
+            Dissent as Signal: The Clinical Dissent Index for Therapist-in-the-Loop Psychotherapy Decision Support Using Heterogeneous Multi-LLM Ensembles
+          </div>
+          <div class="paper-authors">
+            Mario Vega-Barbas, Lidia Mora, Iván Pau, Farhad Abtahi, Fernando Seoane
+          </div>
+          <div class="paper-affil">
+            InnoTep Research Group · ETSIS de Telecomunicación · Universidad Politécnica de Madrid<br>
+            Department of Clinical Science, Intervention and Technology · Karolinska Institutet
+          </div>
+          <div class="paper-rule"></div>
+          <div class="paper-abstract">
+            Presentamos CHORUS, un sistema multi-LLM para apoyo al razonamiento clínico en psicoterapia que preserva el disenso del ensemble en lugar de suprimirlo mediante síntesis. Formalizamos el <strong>Clinical Dissent Index</strong> como medida escalar de diversidad diagnóstica y exponemos la <strong>Voz Solista</strong> como entidad clínica diferenciada.
+          </div>
+        </div>
+
+        <div class="paper-links">
+          <a href="#" class="paper-link">
+            <div class="link-icon"><i class="fa-brands fa-orcid"></i></div>
+            <div class="link-content">
+              <div class="link-title">Preprint en arXiv</div>
+              <div class="link-sub">arxiv.org / próximamente</div>
+            </div>
+            <span class="link-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+          </a>
+          <a href="#" class="paper-link">
+            <div class="link-icon"><i class="fa-solid fa-file-lines"></i></div>
+            <div class="link-content">
+              <div class="link-title">Artículo (JMIR Mental Health)</div>
+              <div class="link-sub">en revisión · 2026</div>
+            </div>
+            <span class="link-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+          </a>
+          <a href="https://github.com/mariovegabarbas/CHORUS-Clinical-Heterogeneous-Orchestration" class="paper-link" target="_blank" rel="noopener">
+            <div class="link-icon"><i class="fa-brands fa-github"></i></div>
+            <div class="link-content">
+              <div class="link-title">Código fuente</div>
+              <div class="link-sub">github.com · MIT License</div>
+            </div>
+            <span class="link-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+          </a>
+          <a href="#" class="paper-link">
+            <div class="link-icon"><i class="fa-solid fa-quote-right"></i></div>
+            <div class="link-content">
+              <div class="link-title">Citar este trabajo</div>
+              <div class="link-sub">BibTeX · APA · Vancouver</div>
+            </div>
+            <span class="link-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================================
+       TEAM SECTION
+       ============================================================= -->
+  <style>
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+    @media (max-width: 900px) {
+      .team-grid { grid-template-columns: 1fr; }
+    }
+    .team-card {
+      text-align: left;
+    }
+    .team-card .member-avatar {
+      width: 100%;
+      aspect-ratio: 1;
+      max-width: 220px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--chorus-mist), var(--chorus-coral-soft));
+      margin-bottom: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      color: var(--chorus-navy);
+      font-style: italic;
+      font-weight: 400;
+    }
+    .team-card h4 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 500;
+      margin-bottom: 0.2rem;
+    }
+    .team-card .member-role {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--chorus-coral);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+    .team-card .member-affil {
+      font-size: 0.85rem;
+      color: var(--chorus-ink-mute);
+      font-style: italic;
+      line-height: 1.4;
+    }
+  </style>
+
+  <section class="section-chorus" id="team">
+    <div class="container is-max-desktop">
+      <div class="section-kicker">Equipo · Personas</div>
+      <h2>Quienes están <em>detrás</em><br>de CHORUS.</h2>
+      <div class="divider"></div>
+      <p class="section-lede">
+        CHORUS es un proyecto del InnoTep Research Group de la Universidad Politécnica de Madrid, con colaboración clínica externa y vínculo conceptual con el Karolinska Institutet.
+      </p>
+
+      <div class="team-grid">
+        <div class="team-card">
+          <div class="member-avatar">MV</div>
+          <div class="member-role">Investigador principal</div>
+          <h4>Mario Vega-Barbas</h4>
+          <div class="member-affil">InnoTep · ETSIS Telecomunicación<br>Universidad Politécnica de Madrid</div>
+        </div>
+        <div class="team-card">
+          <div class="member-avatar">LM</div>
+          <div class="member-role">Validación clínica</div>
+          <h4>Lidia Mora</h4>
+          <div class="member-affil">Psicóloga clínica<br>Práctica privada, Guadalajara</div>
+        </div>
+        <div class="team-card">
+          <div class="member-avatar">IP</div>
+          <div class="member-role">Co-investigador</div>
+          <h4>Iván Pau</h4>
+          <div class="member-affil">InnoTep · ETSIS Telecomunicación<br>Universidad Politécnica de Madrid</div>
+        </div>
+        <div class="team-card">
+          <div class="member-avatar">FA</div>
+          <div class="member-role">Colaboración MEDLEY</div>
+          <h4>Farhad Abtahi</h4>
+          <div class="member-affil">Dept. Clinical Science<br>Karolinska Institutet</div>
+        </div>
+        <div class="team-card">
+          <div class="member-avatar">FS</div>
+          <div class="member-role">Colaboración MEDLEY</div>
+          <h4>Fernando Seoane</h4>
+          <div class="member-affil">Dept. Clinical Science<br>Karolinska Institutet</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================================
+       OWN CASE ANALYZER MODAL
+       ============================================================= -->
+  <style>
+    .analyzer-modal .modal-inner { max-width: 760px; }
+    .analyzer-notice {
+      background: var(--chorus-mist);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      font-size: 0.88rem;
+      color: var(--chorus-ink-soft);
+      margin-bottom: 1.5rem;
+      border-left: 3px solid var(--chorus-coral);
+      line-height: 1.55;
+    }
+    .analyzer-notice strong { color: var(--chorus-ink); }
+    .analyzer-textarea {
+      width: 100%;
+      min-height: 220px;
+      font-family: var(--font-body);
+      font-size: 0.98rem;
+      line-height: 1.55;
+      color: var(--chorus-ink);
+      background: #fff;
+      border: 1px solid var(--chorus-rule);
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.25rem;
+      resize: vertical;
+      transition: border-color 0.2s ease;
+    }
+    .analyzer-textarea:focus {
+      outline: none;
+      border-color: var(--chorus-coral);
+    }
+    .analyzer-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--chorus-ink-mute);
+    }
+    .analyzer-meta .word-count.is-sufficient { color: var(--chorus-sage); }
+    .analyzer-actions {
+      margin-top: 2rem;
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+    .model-selector {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .model-pill {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 0.4rem 0.65rem;
+      background: #fff;
+      border: 1px solid var(--chorus-rule);
+      border-radius: var(--radius-sm);
+      color: var(--chorus-ink-soft);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .model-pill.is-selected {
+      border-color: var(--chorus-coral);
+      background: var(--chorus-coral-soft);
+      color: var(--chorus-coral-dark);
+    }
+    .field-label {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--chorus-ink-mute);
+      margin-bottom: 0.5rem;
+      margin-top: 1.75rem;
+      display: block;
+    }
+    .field-label:first-child { margin-top: 0; }
+  </style>
+
+  <div class="case-modal analyzer-modal" id="analyzer-modal" role="dialog" aria-modal="true" aria-labelledby="analyzer-title">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <div>
+          <div class="case-tag">Analizador · Tu propio caso</div>
+          <h3 id="analyzer-title">Analiza un caso clínico con CHORUS</h3>
+        </div>
+        <button class="close-btn" onclick="closeAnalyzer()" aria-label="Cerrar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="analyzer-notice">
+          <strong>Antes de introducir un caso.</strong> El texto se transmitirá a APIs externas de terceros (OpenRouter, OpenAI) para su procesamiento. Confirma que el caso está anonimizado según la plantilla CHORUS antes de continuar. No introduzcas ningún identificador directo o indirecto del paciente.
+        </div>
+
+        <label class="field-label">Descripción del caso (mín. 150 palabras)</label>
+        <textarea
+          class="analyzer-textarea"
+          id="case-text"
+          placeholder="Describe el caso clínico en formato libre: motivo de consulta, datos demográficos anonimizados, antecedentes, dinámica familiar o relacional, síntomas, elementos de incertidumbre clínica..."
+          oninput="updateWordCount()"></textarea>
+        <div class="analyzer-meta">
+          <span><span id="word-count" class="word-count">0</span> palabras · <span id="word-min">mínimo 150</span></span>
+          <span id="privacy-note"><i class="fa-solid fa-lock"></i> anonimización verificada</span>
+        </div>
+
+        <label class="field-label">Modelos del ensemble</label>
+        <div class="model-selector" id="model-selector">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="analyzer-actions">
+          <button class="btn-chorus is-ghost" onclick="closeAnalyzer()">Cancelar</button>
+          <button class="btn-chorus is-primary" id="analyze-btn" onclick="runAnalysis()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Analizar caso
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================
+       FOOTER
+       ============================================================= -->
+  <style>
+    .chorus-footer {
+      background: var(--chorus-navy);
+      color: rgba(255,255,255,0.75);
+      padding: 4rem 0 2rem;
+      font-size: 0.92rem;
+    }
+    .chorus-footer .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 3rem;
+    }
+    @media (max-width: 900px) {
+      .chorus-footer .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+    }
+    @media (max-width: 600px) {
+      .chorus-footer .footer-grid { grid-template-columns: 1fr; }
+    }
+    .footer-brand {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: #fff;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.04em;
+    }
+    .footer-tagline {
+      color: rgba(255,255,255,0.6);
+      max-width: 360px;
+      font-style: italic;
+      font-family: var(--font-display);
+      line-height: 1.5;
+    }
+    .chorus-footer h5 {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--chorus-coral);
+      margin-bottom: 1.1rem;
+    }
+    .chorus-footer ul { list-style: none; margin: 0; padding: 0; }
+    .chorus-footer ul li { margin-bottom: 0.5rem; }
+    .chorus-footer ul a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .chorus-footer ul a:hover { color: var(--chorus-coral); }
+    .chorus-footer .footer-bottom {
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+    .chorus-footer .footer-logos {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .chorus-footer .footer-logo-text {
+      font-family: var(--font-display);
+      font-style: italic;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.85rem;
+      padding-right: 1.5rem;
+      border-right: 1px solid rgba(255,255,255,0.15);
+    }
+    .chorus-footer .footer-logo-text:last-child { border-right: none; padding-right: 0; }
+    .chorus-footer .footer-credit {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.5);
+    }
+    .chorus-footer .footer-credit a {
+      color: var(--chorus-coral);
+      text-decoration: none;
+    }
+  </style>
+
+  <footer class="chorus-footer" id="contact">
+    <div class="container is-max-desktop">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">CHORUS</div>
+          <p class="footer-tagline">
+            Disenso como señal. Terapeuta en el centro.<br>
+            Un proyecto del InnoTep Research Group.
+          </p>
+        </div>
+        <div>
+          <h5>Explorar</h5>
+          <ul>
+            <li><a href="#system">El sistema</a></li>
+            <li><a href="#cases">Galería de casos</a></li>
+            <li><a href="#paper">Publicación</a></li>
+            <li><a href="#team">Equipo</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5>Recursos</h5>
+          <ul>
+            <li><a href="#">Documentación</a></li>
+            <li><a href="https://github.com/mariovegabarbas/CHORUS-Clinical-Heterogeneous-Orchestration" target="_blank" rel="noopener">Código fuente</a></li>
+            <li><a href="#">Plantilla de anonimización</a></li>
+            <li><a href="#">Protocolo de validación</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5>Contacto</h5>
+          <ul>
+            <li><a href="mailto:mario.vega@upm.es">mario.vega@upm.es</a></li>
+            <li><a href="https://innotep.upm.es" target="_blank" rel="noopener">innotep.upm.es</a></li>
+            <li><a href="https://www.upm.es" target="_blank" rel="noopener">upm.es</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div class="footer-logos">
+          <span class="footer-logo-text">Universidad Politécnica de Madrid</span>
+          <span class="footer-logo-text">ETSIS Telecomunicación</span>
+          <span class="footer-logo-text">InnoTep Research Group</span>
+        </div>
+        <div class="footer-credit">
+          © 2026 InnoTep · CHORUS. Código abierto bajo <a href="#">MIT License</a>.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- =============================================================
+       JAVASCRIPT
+       ============================================================= -->
+  <script>
+    // ============================================================
+    // Case data — the illustrative case from the paper (Case 8)
+    // Other cases use realistic synthetic data for demo purposes
+    // ============================================================
+    const CASES = {
+      1: {
+        tag: "Caso 01 · Individual",
+        title: "Duelo complicado tras pérdida parental",
+        cdi: 0.18,
+        level: "Bajo",
+        levelKey: "low",
+        interp: "Alta convergencia del ensemble. Hipótesis diagnóstica bien soportada.",
+        entropy: 0.42,
+        consensus: [
+          { model: "gpt-4o", score: 0.92, solo: false },
+          { model: "claude-3.5-sonnet", score: 0.90, solo: false },
+          { model: "gemini-pro-1.5", score: 0.89, solo: false },
+          { model: "mistral-large", score: 0.88, solo: false },
+          { model: "deepseek-chat", score: 0.83, solo: true }
+        ],
+        solo: {
+          model: "deepseek-chat",
+          score: 0.83,
+          content: "<p>Aunque el cuadro apunta a duelo complicado según DSM-5, conviene explorar si la imposibilidad de retomar la rutina laboral responde a un componente depresivo mayor superpuesto más que al propio proceso de duelo.</p><p>La evitación de lugares compartidos podría constituir criterio de TEPT si hay reexperimentación intrusiva, lo que modificaría el abordaje terapéutico hacia intervenciones específicas para trauma.</p>",
+          note: "Esta perspectiva matiza la hipótesis principal pero no la contradice. El terapeuta decide si explora activamente síntomas de trauma o mantiene el marco de duelo."
+        },
+        synthesis: {
+          main: "Los cinco modelos convergen en un diagnóstico de duelo complicado (ICD-11: prolonged grief disorder). La duración superior a seis meses, la imposibilidad de retomar el funcionamiento habitual y los pensamientos intrusivos cumplen criterios diagnósticos. Se recomienda terapia específica para duelo complicado con elementos de activación conductual para el componente depresivo secundario.",
+          deliberation: "Un modelo sugiere explorar comorbilidad con TEPT. Dado el alto consenso, esta alternativa se presenta como refinamiento diagnóstico más que como hipótesis competidora."
+        }
+      },
+      3: {
+        tag: "Caso 03 · Terapia de pareja",
+        title: "Crisis de pareja tras nacimiento del primer hijo",
+        cdi: 0.72,
+        level: "Alto",
+        levelKey: "high",
+        interp: "Disenso sustancial. Caso complejo; evaluación independiente de la Voz Solista recomendada.",
+        entropy: 0.81,
+        consensus: [
+          { model: "gpt-4o", score: 0.71, solo: false },
+          { model: "claude-3.5-sonnet", score: 0.68, solo: false },
+          { model: "gemini-pro-1.5", score: 0.65, solo: false },
+          { model: "llama-3.1-70b", score: 0.62, solo: false },
+          { model: "qwen-2.5-72b", score: 0.34, solo: true }
+        ],
+        solo: {
+          model: "qwen-2.5-72b",
+          score: 0.34,
+          content: "<p>Los modelos del coro enmarcan el caso como transición vital (parenthood transition) con pérdida de intimidad. Propongo una reformulación alternativa: la crisis no es <em>causada</em> por el nacimiento sino <em>revelada</em> por él.</p><p>El nacimiento del primer hijo actúa como test de estrés del sistema de vínculo preexistente. La desconexión emocional progresiva que describe el varón podría ser patrón de evitación del vínculo que ya operaba antes del embarazo y que la coparentalidad hace ahora imposible de sostener en silencio.</p><p>Recomiendo explorar historia de vinculación afectiva previa al embarazo, antes de intervenir sobre la distribución de tareas o la recuperación de la intimidad.</p>",
+          note: "Reformulación significativa: pasa de marco sistémico de transición vital a marco de apego. Implica un plan de intervención distinto (trabajo individual sobre estilos de apego antes que reorganización relacional)."
+        },
+        synthesis: {
+          main: "Cuatro modelos convergen en leer el caso como crisis de pareja asociada a la transición a la parentalidad, con recomendación de psicoeducación sobre cambios en la intimidad postparto y reorganización de la carga de cuidados. Se sugieren intervenciones psicoeducativas y conductuales.",
+          deliberation: "La Voz Solista propone una reformulación desde teoría del apego que invierte la relación causa-efecto. El terapeuta debe decidir si el nacimiento del hijo es <em>la causa</em> de la crisis (postura mayoritaria) o <em>el revelador</em> de una disfunción vincular previa (postura SOLO). Esta decisión determina el plan de intervención."
+        }
+      },
+      4: {
+        tag: "Caso 04 · Terapia familiar",
+        title: "Familia reconstituida con dificultades de integración",
+        cdi: 0.54,
+        level: "Moderado",
+        levelKey: "moderate",
+        interp: "Divergencia notable. Deliberación clínica recomendada antes de proceder.",
+        entropy: 0.67,
+        consensus: [
+          { model: "claude-3.5-sonnet", score: 0.79, solo: false },
+          { model: "gpt-4o", score: 0.76, solo: false },
+          { model: "gemini-pro-1.5", score: 0.72, solo: false },
+          { model: "mistral-large", score: 0.68, solo: false },
+          { model: "llama-3.1-70b", score: 0.48, solo: true }
+        ],
+        solo: {
+          model: "llama-3.1-70b",
+          score: 0.48,
+          content: "<p>Los otros modelos sitúan el foco en los conflictos entre los hijos adolescentes y la parentalización de la hija pre-adolescente. Sugiero atender específicamente a la posición del padrastro como figura con autoridad no legitimada históricamente.</p><p>La parentalización de la menor puede estar funcionando como mecanismo homeostático para compensar la ambigüedad del rol del padrastro, más que como síntoma independiente a abordar.</p>",
+          note: "Introduce una hipótesis sistémica sobre la función de la parentalización que modifica qué intervenir primero."
+        },
+        synthesis: {
+          main: "El caso presenta dinámicas típicas de familia reconstituida: conflictos entre hermanastros, ambigüedad de roles, lealtades divididas. Los modelos recomiendan intervención sistémica con trabajo paralelo de subsistemas (parental y fraternal) y psicoeducación sobre fases de integración.",
+          deliberation: "La Voz Solista sugiere que la parentalización de la hija pre-adolescente puede estar cumpliendo una función compensatoria en el sistema, lo que cambiaría el orden de las intervenciones."
+        }
+      },
+      5: {
+        tag: "Caso 05 · Individual",
+        title: "Ansiedad generalizada en profesional altamente cualificado",
+        cdi: 0.48,
+        level: "Moderado",
+        levelKey: "moderate",
+        interp: "Divergencia notable. Deliberación clínica recomendada antes de proceder.",
+        entropy: 0.61,
+        consensus: [
+          { model: "gpt-4o", score: 0.81, solo: false },
+          { model: "claude-3.5-sonnet", score: 0.78, solo: false },
+          { model: "gemini-pro-1.5", score: 0.74, solo: false },
+          { model: "mistral-large", score: 0.69, solo: false },
+          { model: "deepseek-chat", score: 0.52, solo: true }
+        ],
+        solo: {
+          model: "deepseek-chat",
+          score: 0.52,
+          content: "<p>El coro diagnostica trastorno de ansiedad generalizada basándose en los síntomas somáticos. Antes de confirmar, descartaría exhaustivamente causa orgánica: hipertiroidismo subclínico, arritmias paroxísticas, síndrome de apnea obstructiva del sueño (compatible con insomnio de conciliación y sintomatología diurna).</p><p>El perfil del paciente &mdash; varón de mediana edad, sin antecedentes psiquiátricos, síntomas predominantemente somáticos sin disparador psicológico identificable &mdash; aumenta la probabilidad pre-test de causa orgánica.</p>",
+          note: "Recomienda descartar diagnóstico diferencial orgánico antes de iniciar tratamiento psicoterapéutico."
+        },
+        synthesis: {
+          main: "Cuatro modelos convergen en TAG con síntomas somáticos predominantes, probablemente ligados a sobrecarga laboral crónica en contexto directivo. Se recomienda TCC con componente de regulación fisiológica y mindfulness.",
+          deliberation: "La Voz Solista recuerda la importancia del diagnóstico diferencial orgánico antes de cerrar el cuadro como TAG. Recomendación clínica: verificar que exista evaluación médica reciente."
+        }
+      },
+      7: {
+        tag: "Caso 07 · Individual",
+        title: "Adolescente con autolesiones y dinámica familiar conflictiva",
+        cdi: 0.81,
+        level: "Alto",
+        levelKey: "high",
+        interp: "Disenso sustancial. Caso complejo; evaluación independiente de la Voz Solista recomendada.",
+        entropy: 0.88,
+        consensus: [
+          { model: "claude-3.5-sonnet", score: 0.68, solo: false },
+          { model: "gpt-4o", score: 0.64, solo: false },
+          { model: "gemini-pro-1.5", score: 0.58, solo: false },
+          { model: "mistral-large", score: 0.52, solo: false },
+          { model: "grok-2", score: 0.24, solo: true }
+        ],
+        solo: {
+          model: "grok-2",
+          score: 0.24,
+          content: "<p>Los otros modelos enfocan la autolesión como síntoma individual de la adolescente (regulación emocional, posible trastorno límite incipiente). Propongo leer el síntoma desde la lógica sistémica: las autolesiones podrían estar funcionando como señal no verbal que hace visible un conflicto familiar no procesable en otros niveles.</p><p>Contexto relevante: padre biológico ausente, convivencia con madre y pareja de ésta. La autolesión aparece en el único miembro del sistema cuya voz puede romper la estabilidad aparente del núcleo reconstituido sin que ello se atribuya a «un problema de pareja».</p><p>La intervención individual sobre la adolescente, sin trabajo sistémico paralelo, podría cronificar el síntoma o desplazarlo.</p>",
+          note: "Inversión de la hipótesis diagnóstica: el «paciente identificado» no es quien consulta sino el sistema. Replantea el encuadre terapéutico."
+        },
+        synthesis: {
+          main: "Los modelos mayoritarios identifican la necesidad de evaluación urgente de riesgo suicida y protocolos de seguridad, seguido de intervención individual centrada en regulación emocional (DBT-A, habilidades de tolerancia al malestar) y evaluación de comorbilidad con trastornos afectivos.",
+          deliberation: "La Voz Solista propone un marco sistémico donde la autolesión funciona como síntoma portavoz del sistema familiar. La decisión clínica crítica es si abordar a la adolescente individualmente o integrar desde el inicio trabajo con el sistema familiar."
+        }
+      },
+      8: {
+        tag: "Caso 08 · Terapia familiar",
+        title: "Paciente identificada adolescente con sintomatología difusa",
+        cdi: 0.99,
+        level: "Máximo",
+        levelKey: "max",
+        interp: "Divergencia crítica. Máxima incertidumbre diagnóstica dentro del ensemble.",
+        entropy: 0.96,
+        consensus: [
+          { model: "gpt-4o", score: 0.45, solo: false },
+          { model: "claude-3.5-sonnet", score: 0.43, solo: false },
+          { model: "gemini-pro-1.5", score: 0.41, solo: false },
+          { model: "mistral-large", score: 0.38, solo: false },
+          { model: "trinity-large-preview", score: 0.08, solo: true }
+        ],
+        solo: {
+          model: "trinity-large-preview",
+          score: 0.08,
+          content: "<p>Los otros modelos centran el análisis en la «paciente identificada» —la hija mayor adolescente con problemas de comportamiento— y proponen intervenciones individuales o sistémicas sobre su sintomatología.</p><p>Propongo una lectura radicalmente distinta. La sintomatología difusa de la hija mayor y el rol de «niño invisible» del hermano menor son <em>manifestaciones simultáneas</em> de una dinámica transgeneracional: la lealtad invisible al progenitor ausente emocionalmente reproduce un patrón probablemente presente en la familia de origen de uno de los padres.</p><p>La intervención terapéutica efectiva pasa por hacer emerger la línea transgeneracional &mdash; no por reducir los síntomas visibles. Identificar cuál de los progenitores replica su propia posición infantil en el nuevo sistema es la tarea diagnóstica central.</p>",
+          note: "Reformulación completa: el «paciente identificado» desaparece como foco. La hipótesis diagnóstica se desplaza al nivel transgeneracional. Implica un plan de intervención fundamentalmente distinto al propuesto por el consenso."
+        },
+        synthesis: {
+          main: "Cuatro modelos proponen leer el caso como dinámica familiar disfuncional con síntoma identificado en la hija mayor. Se recomienda terapia familiar estructural con intervención específica sobre los límites parentales y trabajo individual con la adolescente para contención sintomática.",
+          deliberation: "La Voz Solista desplaza radicalmente el foco hacia una lectura transgeneracional. En un caso con CDI = 0.99 &mdash; el máximo observado en nuestro estudio de validación &mdash; el terapeuta debe decidir activamente qué nivel del sistema intervenir. Esta es precisamente la situación en la que el valor clínico del SOLO se hace evidente: sin esta perspectiva, la formulación transgeneracional habría quedado invisible."
+        }
+      }
+    };
+
+    const MODELS = [
+      "gpt-4o", "gpt-4o-mini", "claude-3.5-sonnet", "claude-3-opus",
+      "gemini-pro-1.5", "gemini-flash-1.5", "llama-3.1-70b", "llama-3.1-8b",
+      "mistral-large", "mistral-nemo", "deepseek-chat", "qwen-2.5-72b",
+      "grok-2", "command-r-plus"
+    ];
+
+    // ============================================================
+    // Case modal
+    // ============================================================
+    function openCaseModal(caseId) {
+      const c = CASES[caseId];
+      if (!c) return;
+
+      document.getElementById('case-modal-tag').textContent = c.tag;
+      document.getElementById('case-modal-title').textContent = c.title;
+
+      const body = document.getElementById('case-modal-body');
+
+      // CDI banner color
+      const cdiColor = {
+        low: 'var(--chorus-sage)',
+        moderate: 'var(--chorus-gold)',
+        high: '#d8796c',
+        max: 'var(--chorus-coral)'
+      }[c.levelKey];
+
+      body.innerHTML = `
+        <!-- CDI banner -->
+        <div class="cdi-banner" style="border-left-color: ${cdiColor}">
+          <div>
+            <div class="cdi-level">Clinical Dissent Index</div>
+            <div class="cdi-big" style="color: ${cdiColor}">${c.cdi.toFixed(2)}</div>
+          </div>
+          <div>
+            <div class="cdi-level">Nivel · ${c.level}</div>
+            <div class="cdi-interp">${c.interp}</div>
+          </div>
+          <div class="entropy">
+            <strong>${c.entropy.toFixed(2)}</strong>
+            entropía H
+          </div>
+        </div>
+
+        <!-- Consensus map -->
+        <div class="modal-section">
+          <div class="modal-section-title">Mapa de consenso-disenso</div>
+          <h4>Puntuación individual de cada modelo</h4>
+          <div class="consensus-list">
+            ${c.consensus.map(m => `
+              <div class="consensus-row ${m.solo ? 'is-solo' : ''}">
+                <div class="model-name">${m.model}${m.solo ? '<span class="solo-badge">SOLO</span>' : ''}</div>
+                <div class="bar-track"><div class="bar-fill" style="width: ${(m.score * 100).toFixed(0)}%"></div></div>
+                <div class="score">${m.score.toFixed(2)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- SOLO -->
+        <div class="modal-section">
+          <div class="modal-section-title">Voz solista · perspectiva disidente</div>
+          <div class="solo-card">
+            <div class="solo-model">
+              <span>modelo: <strong>${c.solo.model}</strong></span>
+              <span>score: ${c.solo.score.toFixed(2)} · mínimo del ensemble</span>
+            </div>
+            <div class="solo-content">${c.solo.content}</div>
+            <div class="solo-note"><strong>Lectura clínica:</strong> ${c.solo.note}</div>
+          </div>
+        </div>
+
+        <!-- Synthesis -->
+        <div class="modal-section">
+          <div class="modal-section-title">Síntesis integrada</div>
+          <h4>Consenso del coro con preservación de deliberaciones</h4>
+          <div class="synthesis-card">
+            <p>${c.synthesis.main}</p>
+            <div class="deliberation-block">
+              <div class="label"><i class="fa-solid fa-scale-balanced"></i> Puntos de deliberación clínica</div>
+              ${c.synthesis.deliberation}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Animate consensus bars after render
+      setTimeout(() => {
+        body.querySelectorAll('.bar-fill').forEach(b => {
+          const w = b.style.width;
+          b.style.width = '0';
+          setTimeout(() => b.style.width = w, 50);
+        });
+      }, 100);
+
+      document.getElementById('case-modal').classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCaseModal() {
+      document.getElementById('case-modal').classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+
+    // Click handler for case cards
+    document.querySelectorAll('.case-card[data-case]').forEach(card => {
+      card.addEventListener('click', () => {
+        const caseId = card.dataset.case;
+        openCaseModal(caseId);
+      });
+    });
+
+    // Close on backdrop click or Escape
+    document.getElementById('case-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'case-modal') closeCaseModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeCaseModal();
+        closeAnalyzer();
+      }
+    });
+
+    // ============================================================
+    // Filters
+    // ============================================================
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const filter = chip.dataset.filter;
+        const group = chip.parentElement;
+
+        // If filter is 'all' or a type, toggle within type group
+        // If filter is a CDI level, toggle within CDI group
+        // For simplicity: only one chip active across all at a time (not including 'all')
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('is-active'));
+        chip.classList.add('is-active');
+
+        document.querySelectorAll('.case-card[data-case]').forEach(card => {
+          let show = true;
+          if (filter === 'all') show = true;
+          else if (['individual', 'couple', 'family'].includes(filter)) {
+            show = card.dataset.type === filter;
+          } else if (['low', 'moderate', 'high', 'max'].includes(filter)) {
+            show = card.dataset.cdiLevel === filter;
+          }
+          card.style.display = show ? '' : 'none';
+        });
+      });
+    });
+
+    // ============================================================
+    // Own-case analyzer
+    // ============================================================
+    const modelSelector = document.getElementById('model-selector');
+    const defaultSelected = new Set(['gpt-4o', 'claude-3.5-sonnet', 'gemini-pro-1.5', 'mistral-large', 'deepseek-chat']);
+    MODELS.forEach(m => {
+      const pill = document.createElement('button');
+      pill.className = 'model-pill' + (defaultSelected.has(m) ? ' is-selected' : '');
+      pill.textContent = m;
+      pill.onclick = () => pill.classList.toggle('is-selected');
+      modelSelector.appendChild(pill);
+    });
+
+    document.getElementById('own-case-cta').addEventListener('click', () => {
+      document.getElementById('analyzer-modal').classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    });
+
+    function closeAnalyzer() {
+      document.getElementById('analyzer-modal').classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('analyzer-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'analyzer-modal') closeAnalyzer();
+    });
+
+    function updateWordCount() {
+      const text = document.getElementById('case-text').value.trim();
+      const count = text ? text.split(/\s+/).length : 0;
+      const el = document.getElementById('word-count');
+      el.textContent = count;
+      el.classList.toggle('is-sufficient', count >= 150);
+    }
+
+    function runAnalysis() {
+      const text = document.getElementById('case-text').value.trim();
+      const count = text ? text.split(/\s+/).length : 0;
+      if (count < 150) {
+        alert('El caso debe tener al menos 150 palabras para un análisis significativo.');
+        return;
+      }
+      const selectedModels = [...document.querySelectorAll('.model-pill.is-selected')].map(p => p.textContent);
+      if (selectedModels.length < 3) {
+        alert('Selecciona al menos 3 modelos para formar un ensemble.');
+        return;
+      }
+      // Placeholder: in production this would call the CHORUS API
+      alert(`El analizador real estará disponible cuando el endpoint público de CHORUS se despliegue.\n\nModelos seleccionados: ${selectedModels.length}\nPalabras del caso: ${count}\n\nPor ahora, explora los casos pre-analizados en la galería.`);
+    }
+  </script>
+
+</body>
+</html>
