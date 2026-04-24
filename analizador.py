@@ -290,55 +290,6 @@ def identificar_solo(consensos_ind, resultados_raw):
     }
 
 
-# ── Compat con app.py ─────────────────────────────────────────────────────────
-
-def obtener_matriz_consenso_completa(respuestas):
-    if len(respuestas) < 2:
-        return np.array([[1.0]]), 1.0, [0]
-    try:
-        limpias = [(i, r.strip()) for i, r in enumerate(respuestas)
-                   if r and len(r.strip()) > 10]
-        if len(limpias) < 2:
-            n = len(respuestas)
-            return np.identity(n), 0.5, list(range(n))
-        indices = [i for i, _ in limpias]
-        textos  = [t for _, t in limpias]
-        sim = _matriz_tfidf(textos)
-        n_total = len(respuestas)
-        full = np.zeros((n_total, n_total))
-        for ii, idx_i in enumerate(indices):
-            for jj, idx_j in enumerate(indices):
-                full[idx_i, idx_j] = sim[ii, jj]
-        for i in range(n_total):
-            if i not in indices:
-                full[i, i] = 1.0
-        vals = [full[i, j] for i in indices for j in indices if i != j]
-        cg = round(float(np.mean(vals)), 4) if vals else 0.5
-        return full, cg, indices
-    except Exception as e:
-        print(f"[analizador] Error obtener_matriz: {e}")
-        n = len(respuestas)
-        return np.identity(n), 0.5, list(range(n))
-
-
-def calcular_consenso_semantico(respuestas, nombres):
-    raws = [{"model_name": n, "response": r, "timestamp": ""}
-            for n, r in zip(nombres, respuestas)]
-    rep = asyncio.run(dataAnalisis_interno(raws))
-    return {
-        "matriz_consenso": rep.get("_matriz_tfidf", np.identity(len(respuestas))),
-        "consenso_global": rep.get("consenso_global", 0.5),
-        "consensos_individuales": rep.get("consensos_individuales", []),
-        "mayores_consensos": rep.get("mayores_consensos", []),
-        "respuesta_mas_consensuada": rep.get("respuesta_mas_consensuada"),
-        "indices_filtrados": rep.get("indices_filtrados", list(range(len(respuestas)))),
-        "nombres_filtrados": nombres,
-        "cdi": rep.get("cdi"),
-        "solo": rep.get("solo"),
-        "divergencia_capas": rep.get("divergencia_capas"),
-    }
-
-
 def imprimir_matriz_consenso(matriz, nombres_filtrados):
     if not nombres_filtrados:
         return
