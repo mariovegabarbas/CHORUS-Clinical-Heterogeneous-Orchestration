@@ -13,6 +13,12 @@ API_URL    = "https://openrouter.ai/api/v1/chat/completions"
 API_KEY    = os.environ.get("OPENROUTER_API_KEY", "")
 OUTPUT_PATH = os.environ.get("CHORUS_OUTPUT_PATH", "resultados")
 
+# Reintentos con backoff exponencial para 429 y 5xx. Tres intentos con
+# espera 1s/2s/4s absorben rate limiting ocasional de OpenRouter o fallos
+# transitorios del proveedor upstream. 4xx no-429 no se reintentan.
+RETRY_MAX_ATTEMPTS = 3
+RETRY_BACKOFF_SECONDS = (1.0, 2.0, 4.0)
+
 def _es_error(texto: str) -> bool:
     t = texto.strip()
     if len(t) < 20:
@@ -56,19 +62,31 @@ class Ensamblador:
         provider_version = None
         api_error = None
         t0 = time.perf_counter()
-        try:
-            async with sesion.post(API_URL, headers=headers, json=payload) as rep:
-                if rep.status == 429:
-                    texto_respuesta = f"rate limit exceeded for {modelo['name']}"
-                    api_error = f"http_429"
-                elif rep.status >= 500:
-                    texto_respuesta = f"server error {rep.status} for {modelo['name']}"
-                    api_error = f"http_{rep.status}"
-                else:
+        # Reintentos con backoff para 429/5xx y errores transitorios de red.
+        # La latencia acumulada se mide desde el primer intento; el
+        # `api_error` refleja el resultado del último intento.
+        for attempt in range(RETRY_MAX_ATTEMPTS):
+            try:
+                async with sesion.post(API_URL, headers=headers, json=payload) as rep:
+                    if rep.status == 429 or rep.status >= 500:
+                        if rep.status == 429:
+                            texto_respuesta = f"rate limit exceeded for {modelo['name']}"
+                            api_error = "http_429"
+                        else:
+                            texto_respuesta = f"server error {rep.status} for {modelo['name']}"
+                            api_error = f"http_{rep.status}"
+                        if attempt < RETRY_MAX_ATTEMPTS - 1:
+                            wait = RETRY_BACKOFF_SECONDS[attempt]
+                            print(f"[ensamblador] {modelo['name']} {rep.status}, "
+                                  f"reintento en {wait}s ({attempt+1}/{RETRY_MAX_ATTEMPTS})")
+                            await asyncio.sleep(wait)
+                            continue
+                        break
                     data = await rep.json()
                     if isinstance(data, dict) and "choices" in data and data["choices"]:
                         texto_respuesta = data["choices"][0]["message"]["content"]
                         provider_version = data.get("model")
+                        api_error = None
                     elif isinstance(data, dict) and "error" in data:
                         msg = data["error"].get("message", str(data["error"]))
                         texto_respuesta = f"error {msg}"
@@ -76,12 +94,31 @@ class Ensamblador:
                     else:
                         texto_respuesta = f"error respuesta inesperada: {str(data)[:100]}"
                         api_error = "unexpected_response_shape"
-        except asyncio.TimeoutError:
-            texto_respuesta = f"timeout consultando {modelo['name']}"
-            api_error = "timeout"
-        except Exception as e:
-            texto_respuesta = f"request failed: {e}"
-            api_error = f"exception: {type(e).__name__}"
+                    break
+            except asyncio.TimeoutError:
+                texto_respuesta = f"timeout consultando {modelo['name']}"
+                api_error = "timeout"
+                if attempt < RETRY_MAX_ATTEMPTS - 1:
+                    wait = RETRY_BACKOFF_SECONDS[attempt]
+                    print(f"[ensamblador] {modelo['name']} timeout, "
+                          f"reintento en {wait}s ({attempt+1}/{RETRY_MAX_ATTEMPTS})")
+                    await asyncio.sleep(wait)
+                    continue
+                break
+            except aiohttp.ClientError as e:
+                texto_respuesta = f"request failed: {e}"
+                api_error = f"exception: {type(e).__name__}"
+                if attempt < RETRY_MAX_ATTEMPTS - 1:
+                    wait = RETRY_BACKOFF_SECONDS[attempt]
+                    print(f"[ensamblador] {modelo['name']} {api_error}, "
+                          f"reintento en {wait}s ({attempt+1}/{RETRY_MAX_ATTEMPTS})")
+                    await asyncio.sleep(wait)
+                    continue
+                break
+            except Exception as e:
+                texto_respuesta = f"request failed: {e}"
+                api_error = f"exception: {type(e).__name__}"
+                break
 
         latency_ms = int((time.perf_counter() - t0) * 1000)
 

@@ -8,10 +8,12 @@ analizador.py — CHORUS
   5. Reporte enriquecido para el frontend
 """
 
+import asyncio
 import os
 import time
 import numpy as np
 import json
+import aiohttp
 import requests
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -24,6 +26,12 @@ API_KEY = os.environ.get("OPENAI_API_KEY", "")
 MODELO_FUSION = os.environ.get("CHORUS_FUSION_MODEL", "gpt-4o-mini")
 FUSION_MAX_TOKENS = 1500
 FUSION_TEMPERATURE = 0.2
+
+# Reintentos con backoff exponencial para 429/5xx y errores transitorios de red.
+# Tres intentos con espera 1s, 2s, 4s absorben rate limiting ocasional sin
+# degradar perceptiblemente la experiencia del visitante.
+RETRY_MAX_ATTEMPTS = 3
+RETRY_BACKOFF_SECONDS = (1.0, 2.0, 4.0)
 
 CDI_UMBRALES = {
     "baja":    (0.0,  0.25),
@@ -282,55 +290,6 @@ def identificar_solo(consensos_ind, resultados_raw):
     }
 
 
-# ── Compat con app.py ─────────────────────────────────────────────────────────
-
-def obtener_matriz_consenso_completa(respuestas):
-    if len(respuestas) < 2:
-        return np.array([[1.0]]), 1.0, [0]
-    try:
-        limpias = [(i, r.strip()) for i, r in enumerate(respuestas)
-                   if r and len(r.strip()) > 10]
-        if len(limpias) < 2:
-            n = len(respuestas)
-            return np.identity(n), 0.5, list(range(n))
-        indices = [i for i, _ in limpias]
-        textos  = [t for _, t in limpias]
-        sim = _matriz_tfidf(textos)
-        n_total = len(respuestas)
-        full = np.zeros((n_total, n_total))
-        for ii, idx_i in enumerate(indices):
-            for jj, idx_j in enumerate(indices):
-                full[idx_i, idx_j] = sim[ii, jj]
-        for i in range(n_total):
-            if i not in indices:
-                full[i, i] = 1.0
-        vals = [full[i, j] for i in indices for j in indices if i != j]
-        cg = round(float(np.mean(vals)), 4) if vals else 0.5
-        return full, cg, indices
-    except Exception as e:
-        print(f"[analizador] Error obtener_matriz: {e}")
-        n = len(respuestas)
-        return np.identity(n), 0.5, list(range(n))
-
-
-def calcular_consenso_semantico(respuestas, nombres):
-    raws = [{"model_name": n, "response": r, "timestamp": ""}
-            for n, r in zip(nombres, respuestas)]
-    rep = dataAnalisis_interno(raws)
-    return {
-        "matriz_consenso": rep.get("_matriz_tfidf", np.identity(len(respuestas))),
-        "consenso_global": rep.get("consenso_global", 0.5),
-        "consensos_individuales": rep.get("consensos_individuales", []),
-        "mayores_consensos": rep.get("mayores_consensos", []),
-        "respuesta_mas_consensuada": rep.get("respuesta_mas_consensuada"),
-        "indices_filtrados": rep.get("indices_filtrados", list(range(len(respuestas)))),
-        "nombres_filtrados": nombres,
-        "cdi": rep.get("cdi"),
-        "solo": rep.get("solo"),
-        "divergencia_capas": rep.get("divergencia_capas"),
-    }
-
-
 def imprimir_matriz_consenso(matriz, nombres_filtrados):
     if not nombres_filtrados:
         return
@@ -349,32 +308,65 @@ def imprimir_matriz_consenso(matriz, nombres_filtrados):
 
 # ── Fusión ────────────────────────────────────────────────────────────────────
 
-def _llamar_chatgpt(mensajes):
-    """Llama al modelo de fusión. Devuelve (texto, latency_ms).
+async def _llamar_chatgpt(mensajes):
+    """Llama al modelo de fusión con aiohttp y backoff exponencial.
 
-    latency_ms se mide siempre, incluso en caso de error. El texto
-    es None si la llamada falló.
+    Async nativo: ya no bloquea el event loop del pipeline. Devuelve
+    (texto, latency_ms). `latency_ms` se mide siempre, incluso en caso
+    de error. `texto` es None si la llamada falló tras agotar reintentos.
+
+    Reintentos: 3 intentos con espera 1s/2s/4s para 429, 5xx y errores
+    transitorios de red. Los 4xx no-429 no se reintentan (malformación
+    del request, auth, etc.). Sin API_KEY no se llama a la API.
     """
     t0 = time.perf_counter()
-    try:
-        url = "https://api.openai.com/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
-        payload = {"model": MODELO_FUSION, "messages": mensajes,
-                   "max_tokens": FUSION_MAX_TOKENS, "temperature": FUSION_TEMPERATURE}
-        print("[analizador] Generando fusion...")
-        resp = requests.post(url, json=payload, headers=headers, timeout=60)
-        latency_ms = int((time.perf_counter() - t0) * 1000)
-        if resp.status_code == 200:
-            return resp.json()["choices"][0]["message"]["content"], latency_ms
-        print(f"[analizador] Error ChatGPT: {resp.status_code}")
-        return None, latency_ms
-    except Exception as e:
-        latency_ms = int((time.perf_counter() - t0) * 1000)
-        print(f"[analizador] Error fusion: {e}")
-        return None, latency_ms
+    if not API_KEY or API_KEY.startswith("//"):
+        return None, int((time.perf_counter() - t0) * 1000)
+
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+    payload = {"model": MODELO_FUSION, "messages": mensajes,
+               "max_tokens": FUSION_MAX_TOKENS, "temperature": FUSION_TEMPERATURE}
+    timeout = aiohttp.ClientTimeout(total=60)
+
+    print("[analizador] Generando fusion...")
+    last_error = None
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        for attempt in range(RETRY_MAX_ATTEMPTS):
+            try:
+                async with session.post(url, json=payload, headers=headers) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        latency_ms = int((time.perf_counter() - t0) * 1000)
+                        return data["choices"][0]["message"]["content"], latency_ms
+                    # 429 / 5xx son transitorios: reintentar.
+                    if resp.status == 429 or resp.status >= 500:
+                        last_error = f"http_{resp.status}"
+                        if attempt < RETRY_MAX_ATTEMPTS - 1:
+                            wait = RETRY_BACKOFF_SECONDS[attempt]
+                            print(f"[analizador] Fusion {resp.status}, reintento en {wait}s "
+                                  f"({attempt+1}/{RETRY_MAX_ATTEMPTS})")
+                            await asyncio.sleep(wait)
+                            continue
+                    # 4xx no-429: no reintentar.
+                    print(f"[analizador] Error ChatGPT: {resp.status}")
+                    return None, int((time.perf_counter() - t0) * 1000)
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                last_error = f"{type(e).__name__}: {e}"
+                if attempt < RETRY_MAX_ATTEMPTS - 1:
+                    wait = RETRY_BACKOFF_SECONDS[attempt]
+                    print(f"[analizador] Fusion network error ({last_error}), "
+                          f"reintento en {wait}s ({attempt+1}/{RETRY_MAX_ATTEMPTS})")
+                    await asyncio.sleep(wait)
+                    continue
+                print(f"[analizador] Error fusion tras {RETRY_MAX_ATTEMPTS} intentos: {e}")
+                return None, int((time.perf_counter() - t0) * 1000)
+
+    print(f"[analizador] Error fusion tras {RETRY_MAX_ATTEMPTS} intentos: {last_error}")
+    return None, int((time.perf_counter() - t0) * 1000)
 
 
-def generar_fusion(top_respuestas):
+async def generar_fusion(top_respuestas):
     """Devuelve (texto_fusionado, latency_ms_o_None).
 
     Si no hay al menos 2 respuestas, no se llama a la API: se devuelve
@@ -399,14 +391,14 @@ Instrucciones:
         {"role": "system", "content": "Eres un experto en sintesis clinica multi-perspectiva."},
         {"role": "user",   "content": contexto}
     ]
-    resultado, latency_ms = _llamar_chatgpt(mensajes)
+    resultado, latency_ms = await _llamar_chatgpt(mensajes)
     texto = resultado.strip() if resultado else top_respuestas[0]["response"]
     return texto, latency_ms
 
 
 # ── Análisis principal ────────────────────────────────────────────────────────
 
-def dataAnalisis_interno(resultados_ensamblador):
+async def dataAnalisis_interno(resultados_ensamblador):
     if not resultados_ensamblador or len(resultados_ensamblador) < 2:
         return {"error": "Se necesitan al menos 2 respuestas"}
     try:
@@ -447,7 +439,7 @@ def dataAnalisis_interno(resultados_ensamblador):
                                            "response": r["response"],
                                            "consenso_individual": c["consenso_individual"]})
                         break
-            fusionada, fusion_latency_ms = generar_fusion(top3_datos)
+            fusionada, fusion_latency_ms = await generar_fusion(top3_datos)
             modelos_base = [d["model_name"] for d in top3_datos]
 
         return {
@@ -478,9 +470,9 @@ def dataAnalisis_interno(resultados_ensamblador):
         return {"error": str(e)}
 
 
-def dataAnalisis(resultados_ensamblador):
+async def dataAnalisis(resultados_ensamblador):
     print("\n\t\tANALISIS CHORUS")
-    rep = dataAnalisis_interno(resultados_ensamblador)
+    rep = await dataAnalisis_interno(resultados_ensamblador)
     if "error" in rep:
         print(f"[analizador] {rep['error']}")
         return rep

@@ -11,7 +11,7 @@ def main_menu():
     
     prompt=input("\nEscriba el prompt a evaluar:")
     resultados=asyncio.run(run_ensamblador(modelos,prompt))
-    reporte=dataAnalisis(resultados)
+    reporte=asyncio.run(dataAnalisis(resultados))
 
 async def run_ensamblador(modelos, prompt):
     ensamblador=Ensamblador(modelos=modelos)
