@@ -482,6 +482,11 @@ details .detail-body { padding: 10px 0 4px; font-size: 0.8rem; color: var(--mute
       <div style="text-align:right; font-size:0.75rem; color:var(--muted); margin-top:4px">
         <span id="char-count">0</span> / 8000 caracteres
       </div>
+      <p style="font-size:0.76rem; color:var(--muted); margin-top:8px; line-height:1.5">
+        🔒 <strong>Aviso de privacidad:</strong> el texto del caso no se guarda en el servidor.
+        Solo se conservan metadatos del análisis (hash del texto, longitud, vista previa de 120 caracteres,
+        métricas de consenso y referencias a los modelos usados).
+      </p>
     </div>
 
     <!-- 3. Ejecutar -->
@@ -754,6 +759,7 @@ async function runAnalysis() {
     const resp = await fetch("/api/run-ensemble", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({ prompt, models, modelType: currentType })
     });
     if (!resp.ok) throw new Error(`Error HTTP ${resp.status}`);
@@ -1082,7 +1088,7 @@ function renderModelsDirectory() {
 async function loadHistory() {
   const cont = document.getElementById("history-list-content");
   try {
-    const r = await fetch("/api/history");
+    const r = await fetch("/api/history", { credentials: "same-origin" });
     const d = await r.json();
     if (!d.success || !d.analyses.length) {
       cont.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div>No hay consultas guardadas aún. Realiza tu primera consulta en "Nueva consulta".</div>`;
@@ -1109,18 +1115,52 @@ async function loadHistory() {
 
 async function loadHistoryItem(filename) {
   try {
-    const r = await fetch(`/api/history/${filename}`);
+    const r = await fetch(`/api/history/${filename}`, { credentials: "same-origin" });
     const d = await r.json();
     if (!d.success) throw new Error(d.error);
     document.getElementById("history-list-content").style.display = "none";
     const detCont = document.getElementById("history-detail-content");
-    const full    = d.data.full || d.data;
+    const meta    = d.data || {};
+
+    // Reconstruir un objeto mínimo compatible con displayResults a partir
+    // del meta v1.0. El texto del caso y las respuestas individuales no
+    // se guardan (decisión RGPD): se muestra solo la vista previa y
+    // el resumen de métricas.
+    const modelosMeta = (meta.ensemble && meta.ensemble.modelos) || [];
+    const resultsStub = modelosMeta.map((m, i) => ({
+      model_name: m.name,
+      response: m.api_error
+        ? `(modelo filtrado: ${m.api_error})`
+        : "(respuesta no persistida — meta.json v1.0 solo guarda métricas)",
+      timestamp: meta.timestamp_local || meta.timestamp_utc || "",
+      index: i
+    }));
+
+    const reconstruido = {
+      consenso_data: {
+        consenso_global: meta.consenso_global,
+        consensos_individuales: meta.consensos_individuales || [],
+        nombres_filtrados: (meta.consensos_individuales || []).map(c => c.modelo),
+        cdi: meta.cdi,
+        solo: meta.solo,
+        divergencia_capas: meta.divergencia_capas,
+        embedding_disponible: !!(meta.matrices && meta.matrices.embed),
+      },
+      results: resultsStub,
+      models_requested: (meta.ensemble && meta.ensemble.n_modelos) || resultsStub.length,
+      timestamp: meta.timestamp_local || meta.timestamp_utc || "",
+    };
+
     detCont.innerHTML = `
       <div class="card" style="margin-bottom:12px">
-        <div class="card-title">Caso clínico</div>
-        <p style="font-size:0.88rem;line-height:1.6;white-space:pre-wrap">${escHtml(full.prompt || d.data.prompt_preview || "")}</p>
+        <div class="card-title">Caso clínico (vista previa)</div>
+        <p style="font-size:0.88rem;line-height:1.6;white-space:pre-wrap">${escHtml(meta.prompt_preview || "")}${meta.prompt_length_chars > 120 ? '…' : ''}</p>
+        <p style="font-size:0.74rem;color:var(--muted);margin-top:6px">
+          Solo se muestran los primeros 120 caracteres. El texto completo no se guarda en el servidor.
+          ${meta.case_uuid ? `<br><code style="font-size:0.72rem">case_uuid: ${escHtml(meta.case_uuid)}</code>` : ""}
+        </p>
       </div>`;
-    displayResults(full);
+    displayResults(reconstruido);
     document.getElementById("results-section").style.display = "block";
     document.getElementById("history-detail").style.display = "block";
   } catch (e) {

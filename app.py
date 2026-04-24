@@ -1,11 +1,14 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, make_response
 from flask_cors import CORS
 import asyncio
+import hashlib
 import json
+import subprocess
 import sys
 import os
 import traceback
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -13,9 +16,10 @@ load_dotenv()
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 app = Flask(__name__, static_folder="static")
-CORS(app)
+CORS(app, supports_credentials=True)
 
 OUTPUT_PATH = os.environ.get("CHORUS_OUTPUT_PATH", "resultados")
+BROWSER_COOKIE = "chorus_browser_token"
 
 with open("modelos.json", "r", encoding="UTF-8") as f:
     MODELS_DATA = json.load(f)
@@ -23,12 +27,36 @@ with open("modelos.json", "r", encoding="UTF-8") as f:
 try:
     from analizador import dataAnalisis
     from Ensambladores.ensamblador_LLM import Ensamblador
+    from schemas.meta_v1 import (
+        SCHEMA_VERSION,
+        construir_meta_base,
+        validar_meta,
+        MetaValidationError,
+    )
     MODULES_OK = True
     print("Modulos importados correctamente")
 except ImportError as e:
     print(f"Error importando modulos: {e}")
     traceback.print_exc()
     MODULES_OK = False
+
+
+def _chorus_version():
+    """Hash del commit actual; 'unknown' si no hay git o falla la llamada."""
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            capture_output=True, text=True, timeout=2,
+        )
+        if out.returncode == 0:
+            return out.stdout.strip() or "unknown"
+    except Exception:
+        pass
+    return "unknown"
+
+
+CHORUS_VERSION = _chorus_version()
 
 
 @app.route("/")
@@ -42,6 +70,8 @@ def serve_static(path):
 @app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "modules": MODULES_OK,
+                    "schema_version": SCHEMA_VERSION if MODULES_OK else None,
+                    "chorus_version": CHORUS_VERSION,
                     "time": datetime.now().isoformat()})
 
 @app.route("/api/models", methods=["GET"])
@@ -51,32 +81,45 @@ def get_models():
                     "pay_models":  MODELS_DATA["LLM"]["PAY_MODELS"]})
 
 
+def _browser_token():
+    """Devuelve el token de la cookie (si existe) o None."""
+    return request.cookies.get(BROWSER_COOKIE)
+
+
 @app.route("/api/history", methods=["GET"])
 def get_history():
     try:
+        token = _browser_token()
         path = Path(OUTPUT_PATH)
         if not path.exists():
             return jsonify({"success": True, "analyses": []})
-        files = sorted(path.glob("ensamble_*.json"), reverse=True)[:20]
+        files = sorted(path.glob("ensamble_*.meta.json"), reverse=True)[:50]
         analyses = []
         for f in files:
             try:
-                meta_path = f.with_suffix(".meta.json")
-                if meta_path.exists():
-                    with open(meta_path, "r", encoding="utf-8") as mf:
-                        meta = json.load(mf)
-                    analyses.append(meta)
-                else:
-                    ts_str = f.stem.replace("ensamble_", "")
-                    analyses.append({
-                        "filename": f.name,
-                        "timestamp": ts_str,
-                        "models_count": None,
-                        "cdi": None,
-                        "prompt_preview": None
-                    })
+                with open(f, "r", encoding="utf-8") as mf:
+                    meta = json.load(mf)
+                # Filtrar por browser_token cuando existe en ambos lados.
+                # Si el visitante no tiene cookie, no se le muestra nada
+                # para no mezclar análisis de otros navegadores.
+                if token is None:
+                    continue
+                if meta.get("browser_token") != token:
+                    continue
+                # Resumen ligero para la lista.
+                analyses.append({
+                    "filename": f.name.replace(".meta.json", ".json"),
+                    "case_uuid": meta.get("case_uuid"),
+                    "timestamp": meta.get("timestamp_utc") or meta.get("timestamp_local"),
+                    "prompt_preview": meta.get("prompt_preview"),
+                    "models_count": (meta.get("ensemble") or {}).get("n_modelos"),
+                    "cdi": meta.get("cdi"),
+                    "consenso_global": meta.get("consenso_global"),
+                })
+                if len(analyses) >= 20:
+                    break
             except Exception:
-                pass
+                continue
         return jsonify({"success": True, "analyses": analyses})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -93,6 +136,9 @@ def get_history_item(filename):
             return jsonify({"success": False, "error": "Análisis no encontrado"})
         with open(meta_path, "r", encoding="utf-8") as f:
             data = json.load(f)
+        token = _browser_token()
+        if data.get("browser_token") and data["browser_token"] != token:
+            return jsonify({"success": False, "error": "No autorizado"}), 403
         return jsonify({"success": True, "data": data})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
@@ -143,12 +189,105 @@ def format_consenso_data(reporte, resultados_raw):
     return formateado
 
 
-def _guardar_meta(filename_base, payload):
+def _matriz_a_lista(m):
+    if m is None:
+        return None
+    try:
+        return m.tolist()
+    except AttributeError:
+        return list(m)
+
+
+def _construir_meta(*, filename_base, prompt, model_type, modelos_solicitados,
+                   resultados_crudos, reporte, browser_token,
+                   case_reference_id=None, session_code=None):
+    """Construye el payload meta.json v1.0 completo a partir de:
+      - el prompt original,
+      - resultados crudos del ensamblador (todos, válidos y filtrados),
+      - el reporte de dataAnalisis.
+    El prompt completo NO se persiste: solo sha256, preview y longitud.
+    """
+    meta = construir_meta_base()
+
+    ts_utc = datetime.now(timezone.utc)
+    ts_local = datetime.now().astimezone()
+
+    meta["case_uuid"] = str(uuid.uuid4())
+    meta["case_reference_id"] = case_reference_id
+    meta["session_code"] = session_code
+    meta["browser_token"] = browser_token
+    meta["timestamp_utc"] = ts_utc.isoformat().replace("+00:00", "Z")
+    meta["timestamp_local"] = ts_local.isoformat()
+    meta["prompt_sha256"] = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+    meta["prompt_length_chars"] = len(prompt)
+    meta["prompt_preview"] = prompt[:120]
+
+    # Mapa model_name → flag embedding_truncated (válidos solamente).
+    truncated_map = {}
+    flags = reporte.get("embedding_truncated_flags") or []
+    nombres_validos = reporte.get("nombres_filtrados") or []
+    for name, flag in zip(nombres_validos, flags):
+        truncated_map[name] = bool(flag)
+
+    modelos_lista = []
+    for r in resultados_crudos:
+        name = r.get("model_name", "")
+        modelos_lista.append({
+            "name": name,
+            "provider_version": r.get("provider_version"),
+            "latency_ms": r.get("latency_ms"),
+            "response_length_chars": len(r.get("response") or ""),
+            "embedding_truncated": truncated_map.get(name, False),
+            "api_error": r.get("api_error"),
+        })
+
+    meta["ensemble"] = {
+        "n_modelos": len(modelos_lista),
+        "model_type": model_type,
+        "modelos": modelos_lista,
+    }
+
+    meta["fusion"] = {
+        "modelo": reporte.get("fusion_modelo"),
+        "latency_ms": reporte.get("fusion_latency_ms"),
+        "max_tokens": reporte.get("fusion_max_tokens"),
+        "temperature": reporte.get("fusion_temperature"),
+    }
+
+    m_embed = reporte.get("_matriz_embed")
+    m_tfidf = reporte.get("_matriz_tfidf")
+    meta["matrices"] = {
+        "tfidf": _matriz_a_lista(m_tfidf),
+        "embed": _matriz_a_lista(m_embed),
+        "principal": "embed" if m_embed is not None else "tfidf",
+    }
+
+    meta["cdi"] = reporte.get("cdi")
+    meta["solo"] = reporte.get("solo")
+    meta["divergencia_capas"] = reporte.get("divergencia_capas")
+    meta["consenso_global"] = reporte.get("consenso_global")
+    meta["consensos_individuales"] = reporte.get("consensos_individuales") or []
+
+    fusion_text = reporte.get("respuesta_fusionada")
+    meta["respuesta_fusionada_sha256"] = (
+        hashlib.sha256(fusion_text.encode("utf-8")).hexdigest()
+        if fusion_text else None
+    )
+
+    meta["chorus_version"] = CHORUS_VERSION
+
+    # Normalizar tipos numpy antes de validar/guardar.
+    meta = json.loads(json.dumps(meta, default=_serializar))
+    validar_meta(meta)
+    return meta
+
+
+def _guardar_meta(filename_base, meta_payload):
     try:
         Path(OUTPUT_PATH).mkdir(exist_ok=True, parents=True)
         meta_path = Path(OUTPUT_PATH) / f"{filename_base}.meta.json"
         with open(meta_path, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2, default=_serializar)
+            json.dump(meta_payload, f, ensure_ascii=False, indent=2, default=_serializar)
     except Exception as e:
         print(f"[app] Error guardando meta: {e}")
 
@@ -165,6 +304,8 @@ def run_ensamble():
         prompt = data.get("prompt", "").strip()
         model_names = data.get("models", [])
         model_type  = data.get("modelType", "free")
+        session_code = data.get("session_code") or None
+        case_reference_id = data.get("case_reference_id") or None
 
         if not prompt:
             return jsonify({"success": False, "error": "El prompt no puede estar vacío"})
@@ -180,11 +321,16 @@ def run_ensamble():
         if not modelos:
             return jsonify({"success": False, "error": "Modelos no encontrados en el catálogo"})
 
+        # Cookie anónima del navegador. Se emite si no existe y se vuelve a
+        # emitir (set-cookie) siempre, para refrescar maxAge.
+        token = _browser_token() or str(uuid.uuid4())
+
         ts_now = datetime.now()
         filename_base = f"ensamble_{ts_now.strftime('%Y%m%d_%H%M%S')}"
 
+        ensamble = Ensamblador(modelos=modelos)
+
         async def ejecutar():
-            ensamble = Ensamblador(modelos=modelos)
             resultados = await ensamble.run(prompt)
             modelos_filtrados = ensamble.modelos_filtrados
             if hasattr(ensamble, "guardar_resultados"):
@@ -199,7 +345,10 @@ def run_ensamble():
             ]
 
             reporte = dataAnalisis(resultados)
-            reporte_limpio = {k: v for k, v in reporte.items() if not k.startswith("_")}
+            reporte_limpio = {
+                k: v for k, v in reporte.items()
+                if not k.startswith("_") and k != "embedding_truncated_flags"
+            }
             consenso_data = format_consenso_data(reporte, resultados)
 
             return {
@@ -207,7 +356,6 @@ def run_ensamble():
                 "results": resultados_fmt,
                 "report": reporte_limpio,
                 "consenso_data": consenso_data,
-                "prompt": prompt,
                 "prompt_preview": prompt[:120] + ("…" if len(prompt) > 120 else ""),
                 "models_count": len(resultados),
                 "models_requested": len(modelos),
@@ -215,25 +363,37 @@ def run_ensamble():
                 "models_failed": modelos_filtrados,
                 "filename": filename_base + ".json",
                 "timestamp": ts_now.isoformat()
-            }
+            }, reporte
 
-        resultado = asyncio.run(ejecutar())
-        serializado = json.loads(json.dumps(resultado, default=_serializar))
+        resultado_ui, reporte_completo = asyncio.run(ejecutar())
+        serializado = json.loads(json.dumps(resultado_ui, default=_serializar))
 
-        # Guardar metadatos para historial
-        meta = {
-            "filename": filename_base + ".json",
-            "timestamp": ts_now.isoformat(),
-            "prompt_preview": resultado["prompt_preview"],
-            "models_count": resultado["models_count"],
-            "models_used": resultado["models_used"],
-            "cdi": resultado.get("consenso_data", {}).get("cdi"),
-            "consenso_global": resultado.get("consenso_data", {}).get("consenso_global"),
-            "full": serializado
-        }
-        _guardar_meta(filename_base, meta)
+        # Construir y guardar meta v1.0.
+        try:
+            meta = _construir_meta(
+                filename_base=filename_base,
+                prompt=prompt,
+                model_type=model_type,
+                modelos_solicitados=modelos,
+                resultados_crudos=getattr(ensamble, "resultados_crudos", []),
+                reporte=reporte_completo,
+                browser_token=token,
+                case_reference_id=case_reference_id,
+                session_code=session_code,
+            )
+            _guardar_meta(filename_base, meta)
+            serializado["case_uuid"] = meta["case_uuid"]
+        except MetaValidationError as mve:
+            print(f"[app] Meta schema v1.0 inválido: {mve}")
+            traceback.print_exc()
 
-        return jsonify(serializado)
+        resp = make_response(jsonify(serializado))
+        resp.set_cookie(
+            BROWSER_COOKIE, token,
+            max_age=60 * 60 * 24 * 365,   # 1 año
+            httponly=True, samesite="Lax", path="/",
+        )
+        return resp
 
     except Exception as e:
         traceback.print_exc()
