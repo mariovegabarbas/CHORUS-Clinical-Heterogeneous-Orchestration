@@ -109,20 +109,41 @@ CHORUS no es una reimplementación de MEDLEY, sino una extensión con contribuci
 
 ### Clinical Dissent Index (CDI)
 
-El CDI es la métrica central del sistema. Se define como:
+El CDI es la métrica central del sistema. A partir del schema v1.0, el CDI se reporta como un conjunto de **tres métricas emparejadas** que capturan fenómenos complementarios y son comparables entre ensembles de distinto tamaño.
 
-```
-CDI = 1 − |det(M_sim)|
-```
+#### Motivación de la normalización
 
-donde `M_sim` es la matriz de similitud entre todas las respuestas del ensemble. Un determinante cercano a 1 indica respuestas casi idénticas (bajo disenso); al alejarse de 1, el determinante cae y el CDI sube, reflejando mayor diversidad diagnóstica.
+La definición original `CDI = 1 − |det(M_sim)|` no es comparable entre ensembles de tamaño distinto: el determinante del Gramiano de n vectores semánticamente relacionados tiende a cero a velocidad geométrica en n, de modo que un CDI de 0.8 con diez modelos no representa el mismo grado de disenso clínico que un CDI de 0.8 con cuatro. Por ese motivo, a partir de la versión del schema v1.0, la métrica principal es la **media geométrica de los valores singulares** de la matriz de similitud.
 
-| Nivel CDI | Rango | Color | Significado clínico |
+#### Las tres métricas
+
+| Métrica | Fórmula | Interpretación |
+|---|---|---|
+| **`cdi_geometric`** (principal) | `|det(M)|^(1/n)` | Media geométrica de los valores singulares. Acotada en [0, 1]. Es la métrica que gobierna el banner semafórico y la que debe citarse por defecto en análisis y publicaciones. Normaliza correctamente por el tamaño del ensemble. |
+| **`cdi_mean_dissent`** | `1 − mean(off-diagonal(M))` | Disenso medio par-a-par. Interpretación directa e intuitiva: 0 = todas las respuestas semánticamente idénticas, 1 = todas ortogonales. Útil como referencia rápida. |
+| **`cdi_entropy`** | Entropía de Shannon sobre las similitudes off-diagonal normalizadas | Capta si el disenso está repartido uniformemente entre los pares o concentrado en pocos de ellos. Complementa a las otras dos cuando hace falta distinguir "disenso global" vs "disenso localizado". |
+
+Además, el payload incluye `cdi_det_raw = 1 − |det(M)|` únicamente como **alias de retrocompatibilidad** para poder releer meta.json generados antes del schema v1.0. No debe usarse en análisis nuevos.
+
+La clave `cdi` del payload del endpoint sigue existiendo y es un alias directo de `cdi_geometric`, lo que evita romper a los consumidores antiguos del JSON.
+
+#### Por qué `cdi_geometric` como métrica principal
+
+Dos razones:
+
+1. **Comparabilidad entre tamaños de ensemble.** La media geométrica de los valores singulares está acotada en [0, 1] independientemente de n, mientras que `|det(M)|` colapsa exponencialmente con n.
+2. **Interpretación limpia.** Un `cdi_geometric` alto significa que los vectores de respuesta son aproximadamente ortogonales entre sí (matriz de similitud cercana a la identidad), es decir, el ensemble no converge. Un `cdi_geometric` bajo significa que todas las respuestas están concentradas en un mismo "cono" semántico.
+
+#### Umbrales clínicos
+
+Los umbrales y colores se aplican sobre `cdi_geometric`:
+
+| Nivel | Rango | Color | Significado clínico |
 |---|---|---|---|
-| **Bajo** | 0.00 – 0.25 | 🟢 Verde | Consenso amplio. Los modelos convergen en una hipótesis diagnóstica similar. La síntesis es fiable. |
-| **Moderado** | 0.26 – 0.50 | 🟡 Amarillo | Divergencia notable. Existen matices de interpretación. Se recomienda revisar las perspectivas individuales. |
-| **Alto** | 0.51 – 0.75 | 🟠 Naranja | Desacuerdo sustancial. El caso presenta complejidad diagnóstica real. La Voz Solista (SOLO) merece evaluación independiente. |
-| **Máximo** | 0.76 – 1.00 | 🔴 Rojo | Disenso extremo. El ensemble no converge. Indicador de alta ambigüedad clínica o presentación atípica. |
+| **Baja** | 0.00 – 0.25 | 🟢 Verde | Convergencia diagnóstica. Los modelos confluyen en una hipótesis similar. La síntesis es fiable. |
+| **Moderada** | 0.25 – 0.60 | 🟡 Amarillo | Ambigüedad moderada. Existen matices. Se recomienda revisar las perspectivas individuales. |
+| **Alta** | 0.60 – 0.85 | 🟠 Naranja | Alta diversidad diagnóstica. Caso complejo. La Voz Solista (SOLO) merece evaluación independiente. |
+| **Máxima** | 0.85 – 1.00 | 🔴 Rojo | Divergencia crítica. Incertidumbre máxima del ensemble. Presentación atípica o caso límite. |
 
 ### Voz Solista (SOLO)
 

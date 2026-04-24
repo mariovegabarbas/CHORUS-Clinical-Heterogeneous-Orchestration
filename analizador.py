@@ -93,32 +93,93 @@ def _matriz_embeddings(textos):
 # ── CDI ───────────────────────────────────────────────────────────────────────
 
 def calcular_cdi(matriz_sim):
+    """
+    Devuelve tres métricas emparejadas de disenso del ensemble, todas
+    acotadas en [0, 1] y comparables entre ensembles de distinto tamaño.
+
+    - cdi_geometric : 1 - |det(M)|**(1/n). Métrica principal. La media
+      geométrica del determinante normaliza el colapso exponencial del
+      det(M) con n y conserva una interpretación clara (producto de
+      valores singulares elevado a 1/n).
+    - cdi_mean_dissent : 1 - mean(off_diagonal(M)). Disenso par-a-par.
+    - cdi_entropy : entropía de Shannon normalizada sobre las
+      similitudes off-diagonal (disperso ↔ concentrado).
+    - cdi_det_raw : 1 - |det(M)|, solo para retrocompatibilidad con
+      meta.json generados antes del schema v1.0.
+
+    El alias `cdi` apunta a `cdi_geometric` para no romper consumidores
+    existentes (frontend, reportes previos).
+    """
+    matriz_sim = np.asarray(matriz_sim, dtype=float)
     n = len(matriz_sim)
+
     if n < 2:
-        return {"cdi": 0.0, "nivel": "baja", "etiqueta": CDI_ETIQUETAS["baja"],
-                "color": CDI_COLORES["baja"], "determinante": 1.0, "entropia": 0.0}
+        return {
+            "cdi": 0.0,
+            "cdi_geometric": 0.0,
+            "cdi_mean_dissent": 0.0,
+            "cdi_entropy": 0.0,
+            "cdi_det_raw": 0.0,
+            "n_modelos": n,
+            "nivel": "baja",
+            "etiqueta": CDI_ETIQUETAS["baja"],
+            "color": CDI_COLORES["baja"],
+            "determinante": 1.0,
+            "entropia": 0.0,
+        }
+
+    if not np.all(np.isfinite(matriz_sim)):
+        return {
+            "cdi": None,
+            "cdi_geometric": None,
+            "cdi_mean_dissent": None,
+            "cdi_entropy": None,
+            "cdi_det_raw": None,
+            "n_modelos": n,
+            "nivel": "indeterminado",
+            "etiqueta": "Matriz de similitud inestable. Alguna respuesta del ensemble no es procesable.",
+            "color": "#888888",
+            "determinante": None,
+            "entropia": None,
+            "error": "matrix_contains_non_finite_values",
+        }
+
     try:
         det = float(np.linalg.det(matriz_sim))
-        cdi = float(np.clip(1.0 - det, 0.0, 1.0))
+        det_abs = abs(det)
+        cdi_det_raw = float(np.clip(1.0 - det_abs, 0.0, 1.0))
+        cdi_geometric = float(np.clip(det_abs ** (1.0 / n), 0.0, 1.0))
     except Exception:
-        cdi, det = 0.5, 0.5
+        det = 0.5
+        cdi_det_raw = 0.5
+        cdi_geometric = 0.5
 
     off = [float(matriz_sim[i, j]) for i in range(n) for j in range(n) if i != j]
     if off:
-        v = np.clip(np.array(off), 1e-10, 1.0)
-        v = v / v.sum()
-        entropia = float(-np.sum(v * np.log(v + 1e-10)))
-    else:
-        entropia = 0.0
+        off_arr = np.array(off)
+        mean_off = float(np.mean(off_arr))
+        cdi_mean_dissent = float(np.clip(1.0 - mean_off, 0.0, 1.0))
 
-    nivel = _nivel_cdi(cdi)
+        v = np.clip(off_arr, 1e-10, 1.0)
+        v = v / v.sum()
+        cdi_entropy = float(-np.sum(v * np.log(v + 1e-10)))
+    else:
+        cdi_mean_dissent = 0.0
+        cdi_entropy = 0.0
+
+    nivel = _nivel_cdi(cdi_geometric)
     return {
-        "cdi": round(cdi, 4),
+        "cdi": round(cdi_geometric, 4),
+        "cdi_geometric": round(cdi_geometric, 4),
+        "cdi_mean_dissent": round(cdi_mean_dissent, 4),
+        "cdi_entropy": round(cdi_entropy, 4),
+        "cdi_det_raw": round(cdi_det_raw, 4),
+        "n_modelos": n,
         "nivel": nivel,
         "etiqueta": CDI_ETIQUETAS[nivel],
         "color": CDI_COLORES[nivel],
         "determinante": round(det, 6),
-        "entropia": round(entropia, 4)
+        "entropia": round(cdi_entropy, 4),
     }
 
 
