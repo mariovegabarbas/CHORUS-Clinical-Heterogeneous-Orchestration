@@ -799,6 +799,24 @@ function renderCDI(cd) {
   const banner = document.getElementById("cdi-banner");
   if (!cdi) { banner.innerHTML = `<p style="color:var(--muted)">CDI no disponible</p>`; return; }
 
+  // Estado indeterminado: matriz de similitud inestable (NaN/Inf) o
+  // error explícito. El banner se renderiza en gris con icono de
+  // advertencia en lugar de intentar pintar un porcentaje numérico.
+  if (cdi.cdi == null || cdi.error) {
+    banner.innerHTML = `
+      <div class="cdi-banner" style="background:#f8fafc; border:2px dashed #94a3b8">
+        <div class="cdi-score" style="color:#64748b; font-size:2rem">⚠</div>
+        <div class="cdi-info">
+          <div class="cdi-level" style="color:#64748b">INDETERMINADO</div>
+          <div class="cdi-etiqueta" style="color:#475569">${cdi.etiqueta || "CDI no computable en este caso."}</div>
+          <div style="font-size:0.78rem; color:var(--muted); margin-top:8px">
+            ${cdi.error ? `<code style="font-size:0.72rem">${escHtml(cdi.error)}</code> · ` : ""}n = ${cdi.n_modelos ?? "—"}
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
   const color = cdi.color || "#64748b";
   const bg    = { baja:"#f0fdf4", moderada:"#fefce8", alta:"#fff7ed", maxima:"#fef2f2" }[cdi.nivel] || "#f8fafc";
   const pct   = Math.round(cdi.cdi * 100);
@@ -988,7 +1006,7 @@ function renderReport(data) {
         <div class="stat-lbl">Consenso global</div>
       </div>
       <div class="stat-box">
-        <div class="stat-num" style="color:${cdi.color||'var(--muted)'}">${Math.round((cdi.cdi||0)*100)}</div>
+        <div class="stat-num" style="color:${cdi.color||'var(--muted)'}">${cdi.cdi == null ? "—" : Math.round(cdi.cdi*100)}</div>
         <div class="stat-lbl">CDI (0–100)</div>
       </div>
       <div class="stat-box">
@@ -1097,7 +1115,7 @@ async function loadHistory() {
     cont.innerHTML = `<div class="history-list">${d.analyses.map(a => {
       const cdi    = a.cdi;
       const color  = cdi ? (cdi.color || "#64748b") : "#64748b";
-      const pct    = cdi ? Math.round(cdi.cdi * 100) : "?";
+      const pct    = (cdi && cdi.cdi != null) ? Math.round(cdi.cdi * 100) : "—";
       const tsStr  = a.timestamp ? new Date(a.timestamp.replace("_","T")).toLocaleString("es-ES") : a.timestamp;
       return `<div class="history-item" onclick="loadHistoryItem('${a.filename}')">
         <div class="history-cdi-dot" style="background:${color}">${pct}</div>
