@@ -1,30 +1,21 @@
 {
   "LLM": {
     "FREE_MODELS": [
-      {"name": "liquid/lfm-2.5-1.2b-thinking:free",        "origin": "France",  "organization": "Liquid AI",    "size": "1.2B",  "flag": "🇫🇷"},
-      {"name": "mistralai/mistral-7b-instruct:free",        "origin": "France",  "organization": "Mistral AI",  "size": "7B",    "flag": "🇫🇷"},
-      {"name": "google/gemma-3n-e2b-it:free",               "origin": "USA",     "organization": "Google",      "size": "2B",    "flag": "🇺🇸"},
-      {"name": "nvidia/nemotron-3-nano-30b-a3b:free",       "origin": "USA",     "organization": "NVIDIA",      "size": "30B",   "flag": "🇺🇸"},
-      {"name": "stepfun/step-3.5-flash:free",               "origin": "China",   "organization": "StepFun",     "size": "43B",   "flag": "🇨🇳"},
-      {"name": "arcee-ai/trinity-large-preview:free",       "origin": "USA",     "organization": "Arcee AI",    "size": "53B",   "flag": "🇺🇸"},
-      {"name": "meta-llama/llama-4-scout:free",             "origin": "USA",     "organization": "Meta",        "size": "17B",   "flag": "🇺🇸"},
-      {"name": "microsoft/phi-4-reasoning:free",            "origin": "USA",     "organization": "Microsoft",   "size": "14B",   "flag": "🇺🇸"},
-      {"name": "qwen/qwen3-235b-a22b:free",                 "origin": "China",   "organization": "Alibaba",     "size": "235B",  "flag": "🇨🇳"},
-      {"name": "deepseek/deepseek-r1:free",                 "origin": "China",   "organization": "DeepSeek",    "size": "671B",  "flag": "🇨🇳"},
-      {"name": "deepseek/deepseek-v3-base:free",            "origin": "China",   "organization": "DeepSeek",    "size": "685B",  "flag": "🇨🇳"},
-      {"name": "google/gemma-3-27b-it:free",                "origin": "USA",     "organization": "Google",      "size": "27B",   "flag": "🇺🇸"}
+      {"name": "meta-llama/llama-3.3-70b-instruct:free",       "origin": "USA",   "organization": "Meta",    "size": "70B",  "flag": "🇺🇸"},
+      {"name": "google/gemma-3-27b-it:free",                   "origin": "USA",   "organization": "Google",  "size": "27B",  "flag": "🇺🇸"},
+      {"name": "nvidia/nemotron-3-super-120b-a12b:free",       "origin": "USA",   "organization": "NVIDIA",  "size": "120B", "flag": "🇺🇸"},
+      {"name": "openai/gpt-oss-120b:free",                     "origin": "USA",   "organization": "OpenAI",  "size": "120B", "flag": "🇺🇸"},
+      {"name": "qwen/qwen3-next-80b-a3b-instruct:free",        "origin": "China", "organization": "Alibaba", "size": "80B",  "flag": "🇨🇳"}
     ],
     "PAY_MODELS": [
-      {"name": "openai/gpt-4o",                            "origin": "USA",     "organization": "OpenAI",      "size": "Large", "flag": "🇺🇸"},
-      {"name": "openai/gpt-4o-mini",                       "origin": "USA",     "organization": "OpenAI",      "size": "Small", "flag": "🇺🇸"},
-      {"name": "anthropic/claude-3.5-sonnet",              "origin": "USA",     "organization": "Anthropic",   "size": "Large", "flag": "🇺🇸"},
-      {"name": "anthropic/claude-3-haiku",                 "origin": "USA",     "organization": "Anthropic",   "size": "Small", "flag": "🇺🇸"},
-      {"name": "google/gemini-pro-1.5",                    "origin": "USA",     "organization": "Google",      "size": "Large", "flag": "🇺🇸"},
-      {"name": "meta-llama/llama-3.1-70b-instruct",       "origin": "USA",     "organization": "Meta",        "size": "70B",   "flag": "🇺🇸"},
-      {"name": "mistralai/mixtral-8x22b-instruct",         "origin": "France",  "organization": "Mistral AI",  "size": "141B",  "flag": "🇫🇷"},
-      {"name": "mistralai/mistral-large",                  "origin": "France",  "organization": "Mistral AI",  "size": "Large", "flag": "🇫🇷"},
-      {"name": "qwen/qwen-2.5-72b-instruct",               "origin": "China",   "organization": "Alibaba",     "size": "72B",   "flag": "🇨🇳"},
-      {"name": "cohere/command-r-plus",                    "origin": "Canada",  "organization": "Cohere",      "size": "104B",  "flag": "🇨🇦"}
+      {"name": "openai/gpt-4o-mini",          "origin": "USA", "organization": "OpenAI",    "size": "Small",   "flag": "🇺🇸"},
+      {"name": "openai/gpt-4o",               "origin": "USA", "organization": "OpenAI",    "size": "Mediano", "flag": "🇺🇸"},
+      {"name": "openai/gpt-4.1",              "origin": "USA", "organization": "OpenAI",    "size": "Large",   "flag": "🇺🇸"},
+      {"name": "anthropic/claude-3.5-haiku",  "origin": "USA", "organization": "Anthropic", "size": "Small",   "flag": "🇺🇸"},
+      {"name": "anthropic/claude-sonnet-4.5", "origin": "USA", "organization": "Anthropic", "size": "Mediano", "flag": "🇺🇸"},
+      {"name": "anthropic/claude-opus-4.5",   "origin": "USA", "organization": "Anthropic", "size": "Premium", "flag": "🇺🇸"},
+      {"name": "google/gemini-2.5-flash",     "origin": "USA", "organization": "Google",    "size": "Small",   "flag": "🇺🇸"},
+      {"name": "google/gemini-2.5-pro",       "origin": "USA", "organization": "Google",    "size": "Mediano", "flag": "🇺🇸"}
     ]
   },
   "TRANSFORMERS": {}
