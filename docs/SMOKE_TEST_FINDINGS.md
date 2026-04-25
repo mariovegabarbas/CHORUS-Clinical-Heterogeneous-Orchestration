@@ -109,3 +109,46 @@ El paper de CHORUS debe declarar explícitamente:
 4. La aceptación de heterogeneidad residual de longitud entre laboratorios como limitación.
 
 Pendiente en el backlog: Issue 10 (snapshot de catálogo) cubre los puntos 1 y 4. Issue 8 (system prompts versionados) cubre el punto 3.
+
+## Bug detectado el 25 abril 2026 — Fusión clínica no se ejecutaba en ensembles de 3 modelos
+
+### Síntoma
+
+Durante el smoke test grande tras la sustitución de gemini-2.5-pro por gemini-2.5-flash, las ejecuciones de REF-001 producían un meta.json con la sección `fusion` enteramente en None:
+
+```json
+"fusion": {"modelo": null, "latency_ms": null, "max_tokens": null, "temperature": null}
+```
+
+Y el campo `respuesta_fusionada_sha256` también `None`. La web mostraba el mensaje "Se necesitan al menos 3 respuestas válidas para generar la síntesis clínica" pese a que el ensemble había producido 3 respuestas válidas.
+
+### Causa raíz
+
+En `analizador.py`, el cálculo del subconjunto de modelos que entra a fusión filtraba con la heurística "los 2/3 mejores":
+
+```python
+n_top = max(1, len(consensos_ind) * 2 // 3)
+mayores = consensos_ind[:n_top]
+```
+
+Con `n_modelos = 3`, esto da `n_top = 2` y `mayores` con 2 elementos. La condición posterior `if len(mayores) >= 3` impedía la llamada a `generar_fusion`. Resultado: para el caso por defecto del programa (ensemble_recomendado de 3 modelos), la fusión no se ejecutaba **nunca**.
+
+El bug era invisible en pruebas porque:
+
+- Los smoke tests previos también daban `fusion: None` y se interpretó como secundario.
+- Los tests unitarios cubrían `_guardar_meta` y `_llamar_chatgpt` pero no la **disparación** de la fusión a partir de un ensemble real.
+- El frontend tenía además un mensaje de error con umbral 3 (`"Se necesitan al menos 3 respuestas válidas"`) que reforzaba la idea de "es esperable", aunque el backend en realidad usaba un umbral de 2 en otras partes (`return {"error": "Se necesitan al menos 2 respuestas"}` en línea 416).
+
+### Resolución
+
+- **`analizador.py`**: lógica de selección rediseñada. Para ensembles pequeños (≤ 4 modelos) se usan todos sin filtro. Para ensembles mayores se mantiene el filtro 2/3 con un mínimo de 3. La fusión se dispara con ≥ 2 respuestas, consistente con el resto del módulo.
+- **`static/index.html`**: mensaje del frontend reformulado a "No se ha generado síntesis clínica. Esto puede ocurrir si la fusión con el modelo síntesis ha fallado." Ya no menciona un umbral incorrecto.
+- **Tests**: añadidos casos para ensemble de 3 modelos (debe fusionar) y de 1 modelo (no debe fusionar).
+
+### Lección
+
+Dos lecciones acumuladas:
+
+Una. **Los criterios de "respuestas válidas" estaban duplicados en backend y frontend con valores distintos** (frontend exigía 3, backend toleraba 2). Cuando un valor está duplicado en dos sitios, la divergencia silenciosa es solo cuestión de tiempo. Anotar como ítem para una limpieza futura: que la condición de fusión la decida solo el backend y que el frontend simplemente reporte qué encontró en el JSON.
+
+Dos. **El smoke test técnico (Issue 6) verificó que el meta.json se guardaba bien, pero no verificó que el contenido del meta.json fuera completo**. La fusión vacía pasó el filtro porque "técnicamente el JSON está bien formado". Para futuros smoke tests, conviene tener un script que valide no solo el schema sino la **completitud semántica** del payload: si un ensemble de 3 modelos válidos no produce fusión, eso es un fallo aunque el meta sea sintácticamente correcto. Posible Issue 13 hipotética: validador de completitud semántica del meta.json.
