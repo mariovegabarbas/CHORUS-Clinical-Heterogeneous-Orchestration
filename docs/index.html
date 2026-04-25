@@ -122,205 +122,526 @@
     .divider.is-centered { margin: 1.5rem auto; }
 
     /* ============================================================
-       NAVBAR
+       NAVBAR — Staff header with floating SOLO marginalia
+       The nav sits over a subtle 5-line staff. A small musical note
+       floats above an empty area of the header as decorative SOLO —
+       it does not participate in navigation.
        ============================================================ */
     .chorus-navbar {
-      background: rgba(255,255,255,0.82);
+      background: rgba(251, 250, 247, 0.92);
       backdrop-filter: saturate(180%) blur(14px);
       -webkit-backdrop-filter: saturate(180%) blur(14px);
       border-bottom: 1px solid var(--chorus-rule);
       position: sticky; top: 0; z-index: 40;
-      padding: 0.75rem 0;
+      padding: 1.1rem 0;
     }
-    .chorus-navbar .brand {
-      display: flex; align-items: center; gap: 0.75rem;
-      font-family: var(--font-display);
-      font-weight: 600;
-      font-size: 1.35rem;
-      letter-spacing: 0.06em;
-      color: var(--chorus-ink);
-      text-decoration: none;
-    }
-    .chorus-navbar .brand:hover { color: var(--chorus-coral); }
-    .chorus-navbar .brand .brand-mark {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: var(--chorus-navy);
+    .chorus-navbar > .container {
       position: relative;
+      z-index: 1;
     }
-    .chorus-navbar .brand .brand-mark::before,
-    .chorus-navbar .brand .brand-mark::after {
+    /* Five staff lines behind the nav content, within the container */
+    .chorus-navbar > .container::before {
       content: '';
       position: absolute;
-      width: 3px; height: 14px;
-      background: rgba(255,255,255,0.7);
-      border-radius: 3px;
+      left: 1.25rem;
+      right: 1.25rem;
+      top: 50%;
+      height: 44px;
+      margin-top: -22px;
+      background-image:
+        linear-gradient(to bottom,
+          transparent 0 10px, rgba(68,79,96,0.18) 10px 11px,
+          transparent 11px 21px, rgba(68,79,96,0.18) 21px 22px,
+          transparent 22px 32px, rgba(68,79,96,0.18) 32px 33px,
+          transparent 33px 43px, rgba(68,79,96,0.18) 43px 44px);
+      pointer-events: none;
+      z-index: 0;
     }
-    .chorus-navbar .brand .brand-mark::before { transform: rotate(-15deg) translateX(-6px); }
-    .chorus-navbar .brand .brand-mark::after  { transform: rotate(15deg)  translateX(6px); background: var(--chorus-coral); }
-    .chorus-navbar .nav-links {
-      display: flex; gap: 2rem; align-items: center;
-    }
-    .chorus-navbar .nav-links a {
-      color: var(--chorus-ink-soft);
-      text-decoration: none;
-      font-size: 0.95rem;
-      font-weight: 500;
+    .chorus-navbar .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
       position: relative;
-      padding: 0.25rem 0;
+      z-index: 1;
+    }
+
+    /* Brand: treble clef + CHORUS */
+    .chorus-navbar .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+      color: var(--chorus-ink);
+      text-decoration: none;
+      background: var(--chorus-paper);
+      padding: 0.3rem 0.85rem 0.3rem 0;
+      position: relative;
+      z-index: 2;
       transition: color 0.2s ease;
     }
-    .chorus-navbar .nav-links a:hover { color: var(--chorus-coral); }
-    .chorus-navbar .nav-links a::after {
-      content: ''; position: absolute; left: 0; bottom: -2px;
-      width: 0; height: 2px; background: var(--chorus-coral);
-      transition: width 0.3s ease;
+    .chorus-navbar .brand:hover { color: var(--chorus-coral); }
+    .chorus-navbar .brand .clef {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 300;
+      font-size: 2.4rem;
+      color: var(--chorus-coral);
+      line-height: 0.6;
+      margin-right: 0.2rem;
     }
-    .chorus-navbar .nav-links a:hover::after { width: 100%; }
+
+    /* Nav items — clean, equivalent, coral-free on hover */
+    .chorus-navbar .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      position: relative;
+      z-index: 2;
+    }
+    .chorus-navbar .nav-links a {
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--chorus-ink-soft);
+      text-decoration: none;
+      padding: 0.35rem 0.9rem;
+      background: var(--chorus-paper);
+      position: relative;
+      transition: color 0.2s ease;
+    }
+    .chorus-navbar .nav-links a:hover { color: var(--chorus-ink); }
+    .chorus-navbar .nav-links a::after {
+      content: '';
+      position: absolute;
+      left: 50%; bottom: 2px;
+      width: 0; height: 1px;
+      background: var(--chorus-navy);
+      opacity: 0.5;
+      transition: width 0.25s ease;
+      transform: translateX(-50%);
+    }
+    .chorus-navbar .nav-links a:hover::after { width: 70%; }
     .chorus-navbar .nav-links .lang-toggle {
       color: var(--chorus-ink-mute);
-      border-left: 1px solid var(--chorus-rule);
-      padding-left: 1.5rem;
-      font-size: 0.8rem;
-      letter-spacing: 0.08em;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
+      margin-left: 0.75rem;
+      padding: 0.35rem 0.65rem;
+    }
+
+    /* SOLO marginalia — a small musical note floating in the empty
+       space between the brand and the nav links. Decorative only. */
+    .chorus-navbar .solo-marginalia {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .chorus-navbar .solo-marginalia svg {
+      width: 52px;
+      height: 44px;
+      overflow: visible;
+      transform: translateY(-4px);
+    }
+    @keyframes solo-note-breath {
+      0%, 100% { filter: drop-shadow(0 0 0 rgba(244,110,127,0)); }
+      50%      { filter: drop-shadow(0 0 6px rgba(244,110,127,0.45)); }
+    }
+    .chorus-navbar .solo-marginalia svg {
+      animation: solo-note-breath 4s ease-in-out infinite;
+    }
+
+    /* Mobile: hide staff + SOLO, collapse to plain nav */
+    @media (max-width: 820px) {
+      .chorus-navbar > .container::before { display: none; }
+      .chorus-navbar .solo-marginalia { display: none; }
+      .chorus-navbar .nav-links { gap: 0.15rem; flex-wrap: wrap; }
+      .chorus-navbar .nav-links a { padding: 0.3rem 0.6rem; font-size: 0.85rem; }
+      .chorus-navbar .brand { font-size: 1.2rem; }
+      .chorus-navbar .brand .clef { font-size: 2rem; }
     }
 
     /* ============================================================
-       HERO
+       HERO — Editorial redesign
+       Asymmetric grid · oversized display type · numbered staff
+       lines as a dimensional graphic device · animated chorus
        ============================================================ */
     .hero-chorus {
-      padding: 6rem 0 5rem;
       position: relative;
       overflow: hidden;
-      background:
-        radial-gradient(ellipse at 85% 15%, rgba(244,110,127,0.08) 0%, transparent 45%),
-        radial-gradient(ellipse at 15% 85%, rgba(68,79,96,0.06) 0%, transparent 45%),
-        var(--chorus-paper);
+      padding: 4.5rem 0 0;
+      background: var(--chorus-paper);
+      border-bottom: 1px solid var(--chorus-rule);
     }
-    .hero-chorus::before {
-      /* subtle musical staff lines in background — chorus metaphor */
-      content: '';
-      position: absolute; inset: 0;
-      background-image:
-        linear-gradient(to bottom, transparent 0, transparent 38px, rgba(68,79,96,0.04) 38px, rgba(68,79,96,0.04) 39px, transparent 39px),
-        linear-gradient(to bottom, transparent 0, transparent 58px, rgba(68,79,96,0.04) 58px, rgba(68,79,96,0.04) 59px, transparent 59px),
-        linear-gradient(to bottom, transparent 0, transparent 78px, rgba(68,79,96,0.04) 78px, rgba(68,79,96,0.04) 79px, transparent 79px);
-      background-size: 100% 120px;
-      background-position: 0 60%;
-      opacity: 0.6;
+
+    /* Big, full-bleed staff system — five horizontal rules with
+       small numeric labels at the left, evoking a score sheet. */
+    .hero-staff {
+      position: absolute;
+      inset: 0;
       pointer-events: none;
+      z-index: 0;
+    }
+    .hero-staff svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
     }
 
-    .hero-chorus .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.6rem;
+    /* Large vertical "no. 01" tab in the upper-right corner */
+    .hero-issue {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 1;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
       font-family: var(--font-mono);
-      font-size: 0.78rem;
+      font-size: 0.72rem;
+      letter-spacing: 0.32em;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--chorus-coral);
-      margin-bottom: 1.75rem;
-    }
-    .hero-chorus .eyebrow::before {
-      content: ''; width: 20px; height: 1px; background: var(--chorus-coral);
+      color: var(--chorus-ink-mute);
+      padding: 1.5rem 0.9rem;
+      border-left: 1px solid var(--chorus-rule);
+      background: var(--chorus-paper);
     }
 
-    .hero-chorus h1 {
+    .hero-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      gap: 3.5rem;
+      align-items: end;
+      padding-bottom: 4.5rem;
+    }
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 2rem; padding-bottom: 3rem; }
+    }
+
+    .hero-meta {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.5rem 1.25rem;
+      align-items: baseline;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--chorus-ink-mute);
+      padding: 1rem 0;
+      margin-bottom: 1.25rem;
+      border-top: 1px solid var(--chorus-ink);
+      border-bottom: 1px solid var(--chorus-rule);
+      max-width: 520px;
+    }
+    .hero-meta dt {
+      color: var(--chorus-coral);
+      font-weight: 500;
+    }
+    .hero-meta dd {
+      margin: 0;
+      color: var(--chorus-ink);
+      letter-spacing: 0.08em;
+    }
+
+    .hero-headline {
       font-family: var(--font-display);
-      font-size: clamp(2.4rem, 5vw, 4.2rem);
-      line-height: 1.05;
-      letter-spacing: -0.025em;
+      font-size: clamp(3rem, 7.4vw, 6.4rem);
+      line-height: 0.94;
+      letter-spacing: -0.035em;
       color: var(--chorus-ink);
       font-weight: 400;
-      max-width: 780px;
+      margin: 0;
       font-variation-settings: "opsz" 144;
+      text-wrap: pretty;
     }
-    .hero-chorus h1 em {
+    .hero-headline .h-line {
+      display: block;
+      position: relative;
+    }
+    .hero-headline .h-line.indent-1 { padding-left: 1.4em; }
+    .hero-headline .h-line.indent-2 { padding-left: 0.6em; }
+    .hero-headline em {
       font-style: italic;
       color: var(--chorus-coral);
       font-weight: 400;
+      position: relative;
     }
-    .hero-chorus h1 strong {
+    .hero-headline em::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      bottom: 0.04em;
+      height: 0.06em;
+      background: var(--chorus-coral);
+      opacity: 0.18;
+    }
+    .hero-headline strong {
       font-weight: 600;
+      font-style: normal;
+    }
+    .hero-headline .h-mark {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.22em;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      color: var(--chorus-ink-mute);
+      vertical-align: 0.85em;
+      padding-left: 0.4em;
+      transform: translateY(-0.1em);
     }
 
-    .hero-chorus .lede {
-      font-size: 1.2rem;
-      color: var(--chorus-ink-soft);
-      max-width: 620px;
-      margin-top: 1.75rem;
+    .hero-deck {
+      margin-top: 2.25rem;
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+      max-width: 640px;
+    }
+    .hero-deck .deck-rule {
+      height: 1px;
+      background: var(--chorus-ink);
+      margin-top: 0.75rem;
+    }
+    .hero-deck .lede {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 1.35rem;
+      line-height: 1.45;
+      color: var(--chorus-ink);
+      margin: 0;
+      letter-spacing: -0.005em;
+    }
+    .hero-deck .lede strong {
+      font-style: normal;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.95rem;
       line-height: 1.55;
+      display: block;
+      color: var(--chorus-ink-soft);
+      margin-top: 0.85rem;
     }
 
     .hero-cta-row {
       display: flex;
-      gap: 0.85rem;
+      gap: 0.6rem;
       margin-top: 2.5rem;
       flex-wrap: wrap;
+      align-items: center;
     }
     .btn-chorus {
-      display: inline-flex; align-items: center; gap: 0.6rem;
+      display: inline-flex; align-items: center; gap: 0.65rem;
       font-family: var(--font-body);
       font-weight: 500;
-      font-size: 0.95rem;
-      padding: 0.85rem 1.5rem;
-      border-radius: 50px;
+      font-size: 0.92rem;
+      padding: 0.95rem 1.5rem;
+      border-radius: 0;
       transition: all 0.25s ease;
       text-decoration: none;
-      border: 1.5px solid transparent;
+      border: 1px solid transparent;
       cursor: pointer;
+      letter-spacing: 0.005em;
     }
     .btn-chorus.is-primary {
-      background: var(--chorus-navy);
-      color: #fff;
+      background: var(--chorus-ink);
+      color: var(--chorus-paper);
+      border-color: var(--chorus-ink);
     }
     .btn-chorus.is-primary:hover {
       background: var(--chorus-coral);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
+      border-color: var(--chorus-coral);
+      transform: translate(2px, -2px);
+      box-shadow: -4px 4px 0 var(--chorus-ink);
     }
     .btn-chorus.is-ghost {
       background: transparent;
       color: var(--chorus-ink);
-      border-color: var(--chorus-rule);
+      border-color: var(--chorus-ink);
     }
     .btn-chorus.is-ghost:hover {
-      border-color: var(--chorus-coral);
-      color: var(--chorus-coral);
+      background: var(--chorus-ink);
+      color: var(--chorus-paper);
     }
-    .btn-chorus i { font-size: 0.85rem; }
+    .btn-chorus.is-text {
+      padding: 0.95rem 0.75rem;
+      color: var(--chorus-ink-soft);
+      border-bottom: 1px solid var(--chorus-rule);
+      border-radius: 0;
+    }
+    .btn-chorus.is-text:hover {
+      color: var(--chorus-coral);
+      border-color: var(--chorus-coral);
+    }
+    .btn-chorus i { font-size: 0.78rem; }
 
-    /* CDI visual: decorative panel on the right of hero showing the metaphor */
+    /* HERO VISUAL — Choir-as-radial-score
+       Five concentric arcs (one per voice) on a half-staff. The
+       SOLO arc is coral and out of phase. The ensemble is contained
+       inside a number-stamped frame to read as a clinical chart. */
     .hero-visual {
       position: relative;
-      height: 420px;
+      align-self: stretch;
+      min-height: 480px;
+      padding: 1.5rem 0 0 1rem;
+      border-left: 1px solid var(--chorus-rule);
+    }
+    @media (max-width: 900px) {
+      .hero-visual { border-left: none; padding-left: 0; min-height: 360px; }
+    }
+    .hero-visual .visual-frame-label {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--chorus-ink-mute);
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--chorus-rule);
+      margin-bottom: 1rem;
     }
-    .hero-visual svg { width: 100%; height: 100%; max-width: 500px; }
-    /* SVG stroke animation */
-    @keyframes voice-enter {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .hero-visual .visual-frame-label .lab-coral { color: var(--chorus-coral); }
+
+    .hero-visual svg {
+      width: 100%;
+      height: auto;
+      max-height: 460px;
+      display: block;
+      overflow: visible;
     }
-    .voice-node { animation: voice-enter 0.8s ease forwards; opacity: 0; }
-    .voice-node:nth-child(1) { animation-delay: 0.1s; }
-    .voice-node:nth-child(2) { animation-delay: 0.25s; }
-    .voice-node:nth-child(3) { animation-delay: 0.4s; }
-    .voice-node:nth-child(4) { animation-delay: 0.55s; }
-    .voice-node:nth-child(5) { animation-delay: 0.7s; }
+
+    /* SVG voices: staggered entry */
+    @keyframes voice-draw {
+      from { stroke-dashoffset: var(--len, 600); opacity: 0; }
+      to   { stroke-dashoffset: 0; opacity: 1; }
+    }
+    .voice-line {
+      stroke-dasharray: var(--len, 600);
+      stroke-dashoffset: var(--len, 600);
+      animation: voice-draw 1.4s cubic-bezier(.2,.7,.1,1) forwards;
+      opacity: 0;
+    }
+    .voice-line.v1 { animation-delay: 0.15s; }
+    .voice-line.v2 { animation-delay: 0.30s; }
+    .voice-line.v3 { animation-delay: 0.45s; }
+    .voice-line.v4 { animation-delay: 0.60s; }
+    .voice-line.v5 { animation-delay: 0.85s; }
+
+    @keyframes voice-bullet {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .voice-bullet {
+      transform-origin: center;
+      transform-box: fill-box;
+      animation: voice-bullet 0.45s cubic-bezier(.5,1.6,.4,1) forwards;
+      opacity: 0;
+    }
+    .voice-bullet.v1 { animation-delay: 1.50s; }
+    .voice-bullet.v2 { animation-delay: 1.62s; }
+    .voice-bullet.v3 { animation-delay: 1.74s; }
+    .voice-bullet.v4 { animation-delay: 1.86s; }
+    .voice-bullet.v5 { animation-delay: 2.00s; }
 
     @keyframes solo-pulse {
       0%, 100% { filter: drop-shadow(0 0 0 rgba(244,110,127,0)); }
-      50% { filter: drop-shadow(0 0 14px rgba(244,110,127,0.5)); }
+      50%      { filter: drop-shadow(0 0 10px rgba(244,110,127,0.55)); }
     }
-    .solo-highlight { animation: solo-pulse 3s ease-in-out infinite; }
+    .solo-pulse { animation: solo-pulse 3.4s ease-in-out infinite; animation-delay: 2.4s; }
+
+    @keyframes label-fade {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .visual-label {
+      animation: label-fade 0.7s ease forwards;
+      opacity: 0;
+    }
+    .visual-label.l1 { animation-delay: 1.7s; }
+    .visual-label.l2 { animation-delay: 2.1s; }
+
+    /* CDI readout chip */
+    .hero-cdi-chip {
+      position: absolute;
+      bottom: 1.5rem;
+      right: 0;
+      padding: 0.6rem 1rem 0.7rem;
+      background: var(--chorus-ink);
+      color: var(--chorus-paper);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: baseline;
+      gap: 0.85rem;
+      box-shadow: -6px 6px 0 var(--chorus-coral);
+    }
+    .hero-cdi-chip .chip-num {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      color: var(--chorus-coral);
+      line-height: 1;
+      text-transform: none;
+    }
+
+    /* Bottom band with the four-act flow markers */
+    .hero-band {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--chorus-ink);
+    }
+    @media (max-width: 760px) {
+      .hero-band { grid-template-columns: repeat(2, 1fr); }
+    }
+    .hero-band .act {
+      padding: 1.4rem 1.5rem 1.4rem 0;
+      border-right: 1px solid var(--chorus-rule);
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .hero-band .act:last-child { border-right: none; }
+    .hero-band .act .act-num {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      color: var(--chorus-ink-mute);
+    }
+    .hero-band .act .act-title {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--chorus-ink);
+      letter-spacing: -0.005em;
+    }
+    .hero-band .act .act-desc {
+      font-size: 0.82rem;
+      color: var(--chorus-ink-soft);
+      line-height: 1.45;
+    }
+    .hero-band .act.is-coral .act-num { color: var(--chorus-coral); }
+    .hero-band .act.is-coral .act-title { color: var(--chorus-coral-dark); font-style: italic; }
 
     /* Section base */
     .section-chorus {
@@ -361,117 +682,218 @@
 <body>
 
   <!-- NAVBAR -->
-  <nav class="chorus-navbar">
+  <nav class="chorus-navbar" aria-label="Navegación principal">
     <div class="container is-max-desktop">
-      <div class="is-flex is-justify-content-space-between is-align-items-center">
-        <a href="#top" class="brand">
-          <span class="brand-mark" aria-hidden="true"></span>
+      <div class="nav-row">
+        <a href="#top" class="brand" aria-label="CHORUS · Inicio">
+          <span class="clef" aria-hidden="true">𝄞</span>
           <span>CHORUS</span>
         </a>
+
+        <!-- SOLO marginalia: decorative floating note. Not a link. -->
+        <div class="solo-marginalia" aria-hidden="true">
+          <svg viewBox="0 0 60 42" xmlns="http://www.w3.org/2000/svg">
+            <!-- Short ledger line above the note -->
+            <line x1="16" y1="14" x2="34" y2="14"
+                  stroke="#f46e7f" stroke-width="1.3" stroke-linecap="round"/>
+            <!-- Note head, slightly tilted like real notation -->
+            <ellipse cx="25" cy="14" rx="5.8" ry="4.2"
+                     fill="#f46e7f" transform="rotate(-18 25 14)"/>
+            <!-- Stem curving softly downward toward the staff -->
+            <path d="M 30 14 Q 31.5 28, 28 40"
+                  stroke="#f46e7f" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+
         <div class="nav-links">
-          <a href="#system">Sistema</a>
-          <a href="#cases">Casos</a>
-          <a href="#paper">Publicación</a>
-          <a href="#team">Equipo</a>
-          <a href="#contact">Contacto</a>
-          <a href="#" class="lang-toggle">EN</a>
+          <a href="#system" data-i18n="nav.system">Sistema</a>
+          <a href="#lineage" data-i18n="nav.lineage">Linaje</a>
+          <a href="#cases" data-i18n="nav.cases">Casos</a>
+          <a href="#paper" data-i18n="nav.paper">Publicación</a>
+          <a href="#team" data-i18n="nav.team">Equipo</a>
+          <a href="#contact" data-i18n="nav.contact">Contacto</a>
+          <a href="#" class="lang-toggle" id="lang-toggle" aria-label="Switch language">EN</a>
         </div>
       </div>
     </div>
   </nav>
 
-  <!-- HERO -->
+  <!-- HERO — editorial -->
   <section class="hero-chorus" id="top">
+    <!-- Background staff: oversized, dimensional, anchored to viewport -->
+    <div class="hero-staff" aria-hidden="true">
+      <svg viewBox="0 0 1200 720" preserveAspectRatio="none">
+        <!-- Five faint horizontal staff lines -->
+        <line x1="0" y1="120" x2="1200" y2="120" stroke="#444f60" stroke-width="0.6" opacity="0.18"/>
+        <line x1="0" y1="220" x2="1200" y2="220" stroke="#444f60" stroke-width="0.6" opacity="0.18"/>
+        <line x1="0" y1="320" x2="1200" y2="320" stroke="#444f60" stroke-width="0.6" opacity="0.18"/>
+        <line x1="0" y1="420" x2="1200" y2="420" stroke="#444f60" stroke-width="0.6" opacity="0.18"/>
+        <line x1="0" y1="520" x2="1200" y2="520" stroke="#444f60" stroke-width="0.6" opacity="0.18"/>
+        <!-- Bar lines, irregular -->
+        <line x1="220" y1="120" x2="220" y2="520" stroke="#444f60" stroke-width="0.5" opacity="0.12"/>
+        <line x1="540" y1="120" x2="540" y2="520" stroke="#444f60" stroke-width="0.5" opacity="0.12"/>
+        <line x1="860" y1="120" x2="860" y2="520" stroke="#444f60" stroke-width="0.5" opacity="0.12"/>
+      </svg>
+    </div>
+
+    <!-- Vertical issue tab -->
+    <div class="hero-issue" data-i18n="hero.issue">No. 01 · Vol. 26 · InnoTep · UPM</div>
+
     <div class="container is-max-desktop">
-      <div class="columns is-vcentered">
-        <div class="column is-7">
-          <div class="eyebrow">InnoTep · Universidad Politécnica de Madrid</div>
-          <h1>
-            El <em>disenso</em> entre modelos<br>
-            como <strong>señal clínica</strong>,<br>
-            no como ruido a suprimir.
+
+      <!-- Meta strip: dossier / filed / supervised / no. -->
+      <dl class="hero-meta">
+        <dt>Dossier</dt><dd>Clinical Heterogeneous Orchestration</dd>
+        <dt>Filed</dt><dd>InnoTep Research Group · ETSIST · UPM</dd>
+        <dt>Supervised</dt><dd>by a human therapist · always</dd>
+      </dl>
+
+      <div class="hero-grid">
+        <!-- LEFT: oversized headline + lede + CTAs -->
+        <div>
+          <h1 class="hero-headline">
+            <span class="h-line">El <em>disenso</em></span>
+            <span class="h-line indent-1">entre modelos<span class="h-mark">N&nbsp;=&nbsp;5</span></span>
+            <span class="h-line indent-2">como <strong>señal</strong></span>
+            <span class="h-line">clínica<span class="h-mark">CDI&nbsp;∈&nbsp;[0,1]</span></span>
           </h1>
-          <p class="lede">
-            CHORUS orquesta múltiples modelos de lenguaje heterogéneos sobre un mismo caso psicoterapéutico y preserva sus desacuerdos. Lo que otros sistemas colapsan en una respuesta única, CHORUS lo expone como mapa de incertidumbre diagnóstica para el terapeuta.
-          </p>
+
+          <div class="hero-deck">
+            <div class="deck-rule" aria-hidden="true"></div>
+            <p class="lede">
+              No como ruido a suprimir.
+              <strong>CHORUS orquesta múltiples LLMs heterogéneos sobre un mismo caso psicoterapéutico y preserva sus desacuerdos. Lo que otros sistemas colapsan en una respuesta única, aquí se expone como mapa de incertidumbre diagnóstica para el terapeuta.</strong>
+            </p>
+          </div>
+
           <div class="hero-cta-row">
             <a href="#cases" class="btn-chorus is-primary">
-              <i class="fa-solid fa-folder-open"></i> Explorar casos
+              Explorar casos <i class="fa-solid fa-arrow-right"></i>
             </a>
             <a href="#system" class="btn-chorus is-ghost">
               <i class="fa-solid fa-diagram-project"></i> Cómo funciona
             </a>
-            <a href="#paper" class="btn-chorus is-ghost">
-              <i class="fa-solid fa-file-lines"></i> Paper (arXiv)
+            <a href="#paper" class="btn-chorus is-text">
+              <i class="fa-solid fa-file-lines"></i> Paper (arXiv) <i class="fa-solid fa-arrow-up-right-from-square"></i>
             </a>
           </div>
         </div>
-        <div class="column is-5">
-          <div class="hero-visual">
-            <!-- Chorus metaphor: 5 voices, one dissenting -->
-            <svg viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg" aria-label="Representación del coro de modelos con una voz disidente">
-              <defs>
-                <radialGradient id="consensus" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stop-color="#444f60" stop-opacity="0.06"/>
-                  <stop offset="100%" stop-color="#444f60" stop-opacity="0"/>
-                </radialGradient>
-                <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="0.5"/>
-                </filter>
-              </defs>
 
-              <!-- consensus cloud -->
-              <circle cx="270" cy="200" r="160" fill="url(#consensus)"/>
-
-              <!-- Consensus connecting lines (4 voices in agreement) -->
-              <g stroke="#444f60" stroke-opacity="0.22" stroke-width="1" fill="none">
-                <line x1="200" y1="120" x2="340" y2="160"/>
-                <line x1="200" y1="120" x2="310" y2="280"/>
-                <line x1="200" y1="120" x2="220" y2="260"/>
-                <line x1="340" y1="160" x2="310" y2="280"/>
-                <line x1="340" y1="160" x2="220" y2="260"/>
-                <line x1="310" y1="280" x2="220" y2="260"/>
-              </g>
-
-              <!-- Dissent line: dashed, to SOLO -->
-              <line x1="270" y1="200" x2="80" y2="340" stroke="#f46e7f" stroke-width="1.5" stroke-dasharray="4 5" opacity="0.7"/>
-
-              <!-- 4 consensus voices -->
-              <g class="voice-node">
-                <circle cx="200" cy="120" r="22" fill="#fff" stroke="#444f60" stroke-width="1.8"/>
-                <text x="200" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444f60" font-weight="500">m₁</text>
-              </g>
-              <g class="voice-node">
-                <circle cx="340" cy="160" r="22" fill="#fff" stroke="#444f60" stroke-width="1.8"/>
-                <text x="340" y="165" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444f60" font-weight="500">m₂</text>
-              </g>
-              <g class="voice-node">
-                <circle cx="310" cy="280" r="22" fill="#fff" stroke="#444f60" stroke-width="1.8"/>
-                <text x="310" y="285" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444f60" font-weight="500">m₃</text>
-              </g>
-              <g class="voice-node">
-                <circle cx="220" cy="260" r="22" fill="#fff" stroke="#444f60" stroke-width="1.8"/>
-                <text x="220" y="265" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444f60" font-weight="500">m₄</text>
-              </g>
-
-              <!-- SOLO voice: dissenter, coral highlighted -->
-              <g class="voice-node solo-highlight">
-                <circle cx="80" cy="340" r="26" fill="#f46e7f" stroke="#f46e7f" stroke-width="2"/>
-                <text x="80" y="345" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#fff" font-weight="600">m*</text>
-              </g>
-
-              <!-- Labels -->
-              <text x="275" y="200" text-anchor="middle" font-family="Fraunces" font-size="13" font-style="italic" fill="#5a6070">consenso</text>
-              <text x="80" y="380" text-anchor="middle" font-family="Fraunces" font-size="13" font-weight="500" fill="#f46e7f">SOLO</text>
-
-              <!-- CDI readout -->
-              <g transform="translate(360, 370)">
-                <rect x="-45" y="-18" width="90" height="36" rx="18" fill="#fff" stroke="#e2e6ec"/>
-                <text x="-30" y="4" text-anchor="start" font-family="JetBrains Mono" font-size="9" fill="#8a8f9c">CDI</text>
-                <text x="18" y="5" text-anchor="middle" font-family="Fraunces" font-size="15" font-weight="600" fill="#f46e7f">0.78</text>
-              </g>
-            </svg>
+        <!-- RIGHT: visual chart of voices -->
+        <div class="hero-visual">
+          <div class="visual-frame-label">
+            <span>Fig. 01 · Coro de modelos</span>
+            <span class="lab-coral">m* SOLO</span>
           </div>
+          <!-- Editorial chart: each voice = a horizontal track with a
+               sine wave. Four navy waves are perfectly aligned in phase
+               (the unison). The SOLO is coral, with higher frequency
+               and out of phase. Tick marks at the ends mimic a chart. -->
+          <svg viewBox="0 0 520 460" xmlns="http://www.w3.org/2000/svg"
+               aria-label="Cinco modelos: cuatro voces en unísono (navy) y una en disenso (coral, SOLO)">
+
+            <!-- Track grid: 5 horizontal bands -->
+            <g stroke="#e2e6ec" stroke-width="0.6">
+              <line x1="0" y1="60"  x2="520" y2="60"/>
+              <line x1="0" y1="140" x2="520" y2="140"/>
+              <line x1="0" y1="220" x2="520" y2="220"/>
+              <line x1="0" y1="300" x2="520" y2="300"/>
+              <line x1="0" y1="380" x2="520" y2="380"/>
+              <line x1="0" y1="440" x2="520" y2="440"/>
+            </g>
+
+            <!-- Vertical scale ticks -->
+            <g stroke="#444f60" stroke-width="0.6" opacity="0.35">
+              <line x1="40"  y1="56"  x2="40"  y2="384"/>
+              <line x1="500" y1="56"  x2="500" y2="384"/>
+            </g>
+            <g font-family="JetBrains Mono" font-size="8" fill="#8a8f9c" letter-spacing="1">
+              <text x="0" y="105">m₁</text>
+              <text x="0" y="185">m₂</text>
+              <text x="0" y="265">m₃</text>
+              <text x="0" y="345">m₄</text>
+              <text x="0" y="425" fill="#f46e7f" font-weight="500">m*</text>
+            </g>
+
+            <!-- 4 Unison waves: identical sine, period 80, amp 18, navy.
+                 Each is drawn 1.4s with a stroke-dash animation. -->
+            <path class="voice-line v1" style="--len:600;"
+                  d="M 50 100 Q 70 82 90 100 T 130 100 T 170 100 T 210 100 T 250 100 T 290 100 T 330 100 T 370 100 T 410 100 T 450 100 T 490 100"
+                  stroke="#444f60" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/>
+            <path class="voice-line v2" style="--len:600;"
+                  d="M 50 180 Q 70 162 90 180 T 130 180 T 170 180 T 210 180 T 250 180 T 290 180 T 330 180 T 370 180 T 410 180 T 450 180 T 490 180"
+                  stroke="#444f60" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/>
+            <path class="voice-line v3" style="--len:600;"
+                  d="M 50 260 Q 70 242 90 260 T 130 260 T 170 260 T 210 260 T 250 260 T 290 260 T 330 260 T 370 260 T 410 260 T 450 260 T 490 260"
+                  stroke="#444f60" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/>
+            <path class="voice-line v4" style="--len:600;"
+                  d="M 50 340 Q 70 322 90 340 T 130 340 T 170 340 T 210 340 T 250 340 T 290 340 T 330 340 T 370 340 T 410 340 T 450 340 T 490 340"
+                  stroke="#444f60" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/>
+
+            <!-- Bullets at start of each track -->
+            <circle class="voice-bullet v1" cx="50" cy="100" r="3" fill="#444f60"/>
+            <circle class="voice-bullet v2" cx="50" cy="180" r="3" fill="#444f60"/>
+            <circle class="voice-bullet v3" cx="50" cy="260" r="3" fill="#444f60"/>
+            <circle class="voice-bullet v4" cx="50" cy="340" r="3" fill="#444f60"/>
+
+            <!-- Unison brace -->
+            <g class="visual-label l1" font-family="Fraunces" font-style="italic" fill="#5a6070">
+              <path d="M 506 80 Q 514 80 514 100 L 514 320 Q 514 340 506 340"
+                    stroke="#444f60" stroke-width="0.8" fill="none" opacity="0.5"/>
+              <text x="0" y="0" transform="translate(516 220) rotate(90)" font-size="11" letter-spacing="0.5">UNÍSONO</text>
+            </g>
+
+            <!-- SOLO wave: coral, higher frequency (period 40), out-of-phase, with subtle animated pulse -->
+            <g class="solo-pulse">
+              <path class="voice-line v5" style="--len:760;"
+                    d="M 50 420 Q 60 396 70 420 T 90 420 T 110 420 T 130 420 T 150 420 T 170 420 T 190 420 T 210 420 T 230 420 T 250 420 T 270 420 T 290 420 T 310 420 T 330 420 T 350 420 T 370 420 T 390 420 T 410 420 T 430 420 T 450 420 T 470 420 T 490 420"
+                    stroke="#f46e7f" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <circle class="voice-bullet v5" cx="50" cy="420" r="4" fill="#f46e7f"/>
+            </g>
+
+            <!-- SOLO callout — angled rule with label -->
+            <g class="visual-label l2">
+              <line x1="490" y1="420" x2="514" y2="420" stroke="#f46e7f" stroke-width="1.2"/>
+              <text x="514" y="416" font-family="JetBrains Mono" font-size="8" fill="#f46e7f" letter-spacing="1.5">SOLO</text>
+              <text x="514" y="430" font-family="JetBrains Mono" font-size="7" fill="#8a8f9c" letter-spacing="1">disiente</text>
+            </g>
+
+            <!-- Top measurement labels: amplitude indicator -->
+            <g class="visual-label l1" font-family="JetBrains Mono" font-size="7" fill="#8a8f9c" letter-spacing="1">
+              <text x="40" y="46">t₀</text>
+              <text x="490" y="46" text-anchor="end">t · 8 measures</text>
+              <line x1="40" y1="50" x2="490" y2="50" stroke="#8a8f9c" stroke-width="0.4" stroke-dasharray="2 3"/>
+            </g>
+          </svg>
+
+          <!-- CDI readout chip floating bottom-right -->
+          <div class="hero-cdi-chip" aria-label="Clinical Dissent Index">
+            CDI<span class="chip-num">0.42</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom band: four-act flow markers -->
+      <div class="hero-band" aria-hidden="false">
+        <div class="act">
+          <span class="act-num">i.</span>
+          <span class="act-title">Caso</span>
+          <span class="act-desc">Texto libre, anonimizado.</span>
+        </div>
+        <div class="act">
+          <span class="act-num">ii.</span>
+          <span class="act-title">Ensemble</span>
+          <span class="act-desc">N modelos, mismo prompt, T = 0.4.</span>
+        </div>
+        <div class="act is-coral">
+          <span class="act-num">iii.</span>
+          <span class="act-title">Disenso</span>
+          <span class="act-desc">CDI &amp; m* SOLO.</span>
+        </div>
+        <div class="act">
+          <span class="act-num">iv.</span>
+          <span class="act-title">Síntesis</span>
+          <span class="act-desc">El terapeuta decide.</span>
         </div>
       </div>
     </div>
@@ -690,6 +1112,424 @@
             <div class="step-tag">salida</div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================================
+       LINAJE — From MEDLEY to CHORUS
+       ============================================================= -->
+  <style>
+    .lineage-section {
+      padding: 6rem 0;
+      background: var(--chorus-paper);
+      position: relative;
+      overflow: hidden;
+    }
+    .lineage-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(68,79,96,0.04) 1px, transparent 0);
+      background-size: 24px 24px;
+      pointer-events: none;
+    }
+    .lineage-section > * { position: relative; }
+
+    .lineage-timeline {
+      display: grid;
+      grid-template-columns: 1fr 120px 1fr;
+      gap: 1.5rem;
+      align-items: stretch;
+      margin-top: 3.5rem;
+      margin-bottom: 4rem;
+    }
+    @media (max-width: 900px) {
+      .lineage-timeline { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+
+    .lineage-node {
+      background: #fff;
+      border: 1px solid var(--chorus-rule);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .lineage-node .node-origin {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+      padding: 3px 10px;
+      border-radius: 50px;
+      display: inline-block;
+      align-self: flex-start;
+    }
+    .lineage-node.is-medley .node-origin {
+      color: #6b6054;
+      background: #f5efe4;
+    }
+    .lineage-node.is-chorus .node-origin {
+      color: var(--chorus-coral-dark);
+      background: var(--chorus-coral-soft);
+    }
+    .lineage-node h3 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 1.4rem;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.25rem;
+    }
+    .lineage-node .node-sub {
+      font-family: var(--font-display);
+      font-style: italic;
+      color: var(--chorus-ink-mute);
+      font-size: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .lineage-node .node-body {
+      color: var(--chorus-ink-soft);
+      font-size: 0.96rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      flex-grow: 1;
+    }
+    .lineage-node .node-contributions {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border-top: 1px solid var(--chorus-rule);
+      padding-top: 1.25rem;
+    }
+    .lineage-node .node-contributions li {
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: var(--chorus-ink);
+      padding: 0.3rem 0 0.3rem 1.25rem;
+      position: relative;
+    }
+    .lineage-node .node-contributions li::before {
+      content: '◆';
+      position: absolute;
+      left: 0;
+      color: var(--chorus-ink-mute);
+      font-size: 0.7rem;
+      top: 0.5rem;
+    }
+    .lineage-node.is-chorus .node-contributions li::before {
+      color: var(--chorus-coral);
+    }
+    .lineage-node .node-cite {
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--chorus-rule);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--chorus-ink-mute);
+      line-height: 1.5;
+    }
+
+    .lineage-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 0;
+    }
+    .lineage-arrow .arrow-label {
+      font-family: var(--font-display);
+      font-style: italic;
+      color: var(--chorus-ink-mute);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .lineage-arrow .arrow-svg {
+      width: 100%;
+      max-width: 120px;
+    }
+    @media (max-width: 900px) {
+      .lineage-arrow { padding: 0; }
+      .lineage-arrow .arrow-svg { transform: rotate(90deg); max-width: 80px; }
+    }
+
+    .lineage-table-wrap { margin-top: 3rem; }
+    .lineage-table-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--chorus-coral);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .lineage-table-label::before {
+      content: '';
+      width: 16px; height: 1px;
+      background: var(--chorus-coral);
+    }
+    .lineage-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid var(--chorus-rule);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      font-size: 0.92rem;
+    }
+    .lineage-table th,
+    .lineage-table td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--chorus-rule);
+    }
+    .lineage-table thead th {
+      background: var(--chorus-navy);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .lineage-table tbody tr:last-child td { border-bottom: none; }
+    .lineage-table tbody td:first-child {
+      font-family: var(--font-display);
+      font-weight: 500;
+      color: var(--chorus-ink);
+      white-space: nowrap;
+    }
+    .lineage-table .check-yes {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--chorus-sage);
+      color: #fff;
+      font-size: 0.72rem;
+    }
+    .lineage-table .check-no {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--chorus-rule);
+      color: var(--chorus-ink-mute);
+      font-size: 0.72rem;
+    }
+    .lineage-table .check-partial {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.6rem;
+      border-radius: 50px;
+      background: #f5efe4;
+      color: #8a7553;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+    }
+    .lineage-table .check-partial.is-chorus {
+      background: var(--chorus-coral-soft);
+      color: var(--chorus-coral-dark);
+    }
+    .lineage-table tr.row-chorus td {
+      background: rgba(244, 110, 127, 0.04);
+    }
+    .lineage-table tr.row-chorus td:first-child {
+      color: var(--chorus-coral-dark);
+      position: relative;
+    }
+    .lineage-table tr.row-chorus td:first-child::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--chorus-coral);
+    }
+    .lineage-table tr.row-medley td {
+      background: rgba(181, 145, 95, 0.04);
+    }
+    .lineage-table tr.row-medley td:first-child {
+      color: #6b6054;
+      position: relative;
+    }
+    .lineage-table tr.row-medley td:first-child::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: #b5915f;
+    }
+    .lineage-table-note {
+      margin-top: 1.5rem;
+      padding: 1rem 1.25rem;
+      font-size: 0.88rem;
+      color: var(--chorus-ink-soft);
+      line-height: 1.6;
+      font-family: var(--font-display);
+      font-style: italic;
+    }
+
+    .shared-authors {
+      margin-top: 2.5rem;
+      padding: 1.5rem 1.75rem;
+      background: var(--chorus-mist);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--chorus-navy);
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+    .shared-authors .icon {
+      font-size: 1.3rem;
+      color: var(--chorus-navy);
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .shared-authors p {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: var(--chorus-ink);
+      margin: 0;
+    }
+    .shared-authors p strong {
+      font-family: var(--font-display);
+      font-weight: 500;
+    }
+  </style>
+
+  <section class="lineage-section" id="lineage">
+    <div class="container is-max-desktop">
+      <div class="section-kicker">Linaje · Genealogía conceptual</div>
+      <h2>CHORUS y <em>MEDLEY</em>,<br>dos caras del mismo principio.</h2>
+      <div class="divider"></div>
+      <p class="section-lede">
+        La tesis de que el disenso entre modelos es una señal clínica &mdash; no ruido a suprimir &mdash; nació en MEDLEY. CHORUS no la mejora: la adapta a un dominio estructuralmente distinto. Donde MEDLEY opera sobre diagnósticos codificables (ICD-10), CHORUS opera sobre formulaciones clínicas en texto libre. El cambio de dominio obliga al cambio de métrica. No hay jerarquía entre ambos &mdash; hay complementariedad.
+      </p>
+
+      <div class="lineage-timeline">
+
+        <div class="lineage-node is-medley">
+          <span class="node-origin">Karolinska Institutet · 2026</span>
+          <h3>MEDLEY</h3>
+          <div class="node-sub">Disenso en diagnóstico diferencial</div>
+          <p class="node-body">
+            Marco propuesto por Abtahi, Astaraki y Seoane. Orquesta múltiples LLMs sobre casos clínicos con diagnósticos codificables (ICD-10) y estratifica las respuestas por frecuencia de acuerdo: primary (≥30% de modelos), alternative (10&ndash;29%), minority (&lt;10%). La minoría se preserva como hipótesis provisional para verificación del clínico.
+          </p>
+          <ul class="node-contributions">
+            <li>Dominio: diagnóstico con categorías canónicas</li>
+            <li>Disenso medido como frecuencia de acuerdo</li>
+            <li>Tres estratos: primary · alternative · minority</li>
+            <li>30+ LLMs sobre casos sintéticos</li>
+          </ul>
+          <div class="node-cite">
+            Abtahi, Astaraki &amp; Seoane (2026).<br>
+            <em>Leveraging Imperfection with MEDLEY</em>.<br>
+            Front. Artif. Intell. 9:1701665.
+          </div>
+        </div>
+
+        <div class="lineage-arrow">
+          <div class="arrow-label">adaptación<br>de dominio</div>
+          <svg class="arrow-svg" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arrow-coral" viewBox="0 0 10 10" refX="8" refY="5"
+                      markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#f46e7f"/>
+              </marker>
+            </defs>
+            <path d="M 8 20 L 108 20"
+                  stroke="#f46e7f" stroke-width="1.8"
+                  marker-end="url(#arrow-coral)" fill="none"
+                  stroke-dasharray="3 4"/>
+            <circle cx="8" cy="20" r="3" fill="#f46e7f"/>
+          </svg>
+          <div class="arrow-label" style="margin-top: 1rem; font-size: 0.72rem; font-style: normal; font-family: var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--chorus-coral);">texto libre</div>
+        </div>
+
+        <div class="lineage-node is-chorus">
+          <span class="node-origin">InnoTep · UPM · 2026</span>
+          <h3>CHORUS</h3>
+          <div class="node-sub">Disenso en formulación psicoterapéutica</div>
+          <p class="node-body">
+            Adaptación del paradigma MEDLEY a psicoterapia, donde las respuestas son formulaciones abiertas sin equivalente al ICD-10. La estratificación por frecuencia no aplica: CHORUS opera sobre representaciones vectoriales del texto completo. El Clinical Dissent Index mide diversidad geométrica en el espacio semántico; el SOLO expone la voz más distante.
+          </p>
+          <ul class="node-contributions">
+            <li>Dominio: formulación clínica en texto libre</li>
+            <li>Disenso medido como diversidad geométrica</li>
+            <li>Análisis dual léxico-semántico (TF-IDF + embeddings)</li>
+            <li>Validación con terapeuta experto sobre casos reales</li>
+          </ul>
+          <div class="node-cite">
+            Vega-Barbas, Mora, Pau, Abtahi &amp; Seoane (2026).<br>
+            <em>Dissent as Signal</em>.<br>
+            JMIR Mental Health, en revisión.
+          </div>
+        </div>
+
+      </div>
+
+      <div class="shared-authors">
+        <i class="fa-solid fa-link icon"></i>
+        <p>
+          <strong>Colaboración activa.</strong> Farhad Abtahi y Fernando Seoane, coautores originales de MEDLEY, firman también el paper de CHORUS. La relación entre los dos marcos no es una cita bibliográfica: es un trabajo conjunto sostenido entre el InnoTep Research Group de la UPM y el Department of Clinical Science del Karolinska Institutet, que explora cómo el mismo principio &mdash; preservar el disenso &mdash; toma formas distintas según el dominio clínico.
+        </p>
+      </div>
+
+      <div class="lineage-table-wrap">
+        <div class="lineage-table-label">Dónde aplica cada enfoque</div>
+        <table class="lineage-table">
+          <thead>
+            <tr>
+              <th>Sistema</th>
+              <th>Tipo de respuesta</th>
+              <th>Medición del disenso</th>
+              <th>Dominio clínico</th>
+              <th>Validación</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>llm-council-med</td>
+              <td>Síntesis única</td>
+              <td><span class="check-partial">no aplica</span></td>
+              <td>Texto clínico general</td>
+              <td><span class="check-no"><i class="fa-solid fa-xmark"></i></span></td>
+            </tr>
+            <tr>
+              <td>DSM5AgentFlow</td>
+              <td>Rationale encadenado</td>
+              <td><span class="check-partial">no aplica</span></td>
+              <td>Diagnóstico DSM-5</td>
+              <td><span class="check-partial">sintético</span></td>
+            </tr>
+            <tr class="row-medley">
+              <td>MEDLEY</td>
+              <td>Diagnósticos ICD-10</td>
+              <td>Frecuencia de acuerdo</td>
+              <td>Medicina general</td>
+              <td><span class="check-partial">sintético</span></td>
+            </tr>
+            <tr class="row-chorus">
+              <td>CHORUS</td>
+              <td>Formulación en texto libre</td>
+              <td>Diversidad geométrica</td>
+              <td>Psicoterapia</td>
+              <td><span class="check-partial is-chorus">real · N=14</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="lineage-table-note">
+          MEDLEY y CHORUS aplican el mismo principio &mdash; disenso como señal &mdash; a respuestas de naturaleza distinta. La frecuencia de acuerdo es adecuada cuando las respuestas son categorías codificables; la diversidad geométrica lo es cuando las respuestas son textos abiertos sin ontología canónica. No son métricas rivales: son métricas para problemas distintos.
+        </p>
       </div>
     </div>
   </section>
@@ -1837,7 +2677,7 @@
         <div>
           <h5>Contacto</h5>
           <ul>
-            <li><a href="mailto:mario.vega@upm.es">mario.vega@upm.es</a></li>
+            <li><a href="/cdn-cgi/l/email-protection#670a06150e0849110200062712170a490214"><span class="__cf_email__" data-cfemail="85e8e4f7eceaabf3e0e2e4c5f0f5e8abe0f6">[email&#160;protected]</span></a></li>
             <li><a href="https://innotep.upm.es" target="_blank" rel="noopener">innotep.upm.es</a></li>
             <li><a href="https://www.upm.es" target="_blank" rel="noopener">upm.es</a></li>
           </ul>
@@ -1855,6 +2695,514 @@
       </div>
     </div>
   </footer>
+
+  <!-- =============================================================
+       I18N — Spanish (default) ↔ English
+       Strategy: walk text nodes once, snapshot original ES text,
+       and swap on demand using an exact-match dictionary. Elements
+       with [data-i18n-skip] or inside <script>/<style> are ignored.
+       The dictionary covers headlines, body copy, CTAs, labels,
+       table cells, alerts and dynamically-rendered case modal text.
+       Bibliographic citations stay in their original form.
+       ============================================================= -->
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  (function() {
+    'use strict';
+
+    // ----- Dictionary: ES → EN ------------------------------------
+    // Keys are normalized (collapsed whitespace) Spanish source.
+    // Values are English translations matching the literary register.
+    const T = {
+      // ---- Navbar ----
+      "Sistema": "System",
+      "Linaje": "Lineage",
+      "Casos": "Cases",
+      "Publicación": "Publication",
+      "Equipo": "Team",
+      "Contacto": "Contact",
+
+      // ---- Hero ----
+      "No. 01 · Vol. 26 · InnoTep · UPM": "No. 01 · Vol. 26 · InnoTep · UPM",
+      "Dossier": "Dossier",
+      "Clinical Heterogeneous Orchestration": "Clinical Heterogeneous Orchestration",
+      "Filed": "Filed",
+      "InnoTep Research Group · ETSIST · UPM": "InnoTep Research Group · ETSIST · UPM",
+      "Supervised": "Supervised",
+      "by a human therapist · always": "by a human therapist · always",
+      "El": "On",
+      "disenso": "dissent",
+      "entre modelos": "between models",
+      "como": "as a",
+      "señal": "clinical",
+      "clínica": "signal",
+      "No como ruido a suprimir.": "Not as noise to suppress.",
+      "CHORUS orquesta múltiples LLMs heterogéneos sobre un mismo caso psicoterapéutico y preserva sus desacuerdos. Lo que otros sistemas colapsan en una respuesta única, aquí se expone como mapa de incertidumbre diagnóstica para el terapeuta.":
+        "CHORUS orchestrates multiple heterogeneous LLMs over the same psychotherapy case and preserves their disagreements. What other systems collapse into a single answer is exposed here as a map of diagnostic uncertainty for the therapist.",
+      "Explorar casos": "Explore cases",
+      "Cómo funciona": "How it works",
+      "Paper (arXiv)": "Paper (arXiv)",
+      "Fig. 01 · Coro de modelos": "Fig. 01 · Choir of models",
+      "Caso": "Case",
+      "Texto libre, anonimizado.": "Free text, anonymized.",
+      "Ensemble": "Ensemble",
+      "N modelos, mismo prompt, T = 0.4.": "N models, same prompt, T = 0.4.",
+      "Disenso": "Dissent",
+      "Síntesis": "Synthesis",
+      "El terapeuta decide.": "The therapist decides.",
+      "UNÍSONO": "UNISON",
+      "SOLO": "SOLO",
+      "disiente": "dissents",
+
+      // ---- What / System ----
+      "CHORUS · El sistema": "CHORUS · The system",
+      "De la": "From",
+      "síntesis que oculta": "synthesis that conceals",
+      "al disenso que informa.": "to dissent that informs.",
+      "Los sistemas multi-LLM actuales promedian respuestas para producir una única conclusión consolidada. Este gesto — aparentemente útil — suprime justo la información más valiosa en los casos complejos: los puntos donde los modelos discrepan. CHORUS invierte el enfoque. Tres contribuciones originales, ausentes del estado del arte.":
+        "Current multi-LLM systems average their answers to produce a single consolidated conclusion. That gesture — seemingly useful — suppresses precisely the most valuable information in complex cases: the points where models disagree. CHORUS inverts the approach. Three original contributions, absent from the state of the art.",
+      "Clinical Dissent Index": "Clinical Dissent Index",
+      "Métrica formal de diversidad diagnóstica definida como CDI = 1 − |det(M_sim)|, donde M_sim es la matriz de similitud coseno entre respuestas del ensemble. Toma valores entre 0 (convergencia total) y 1 (máxima diversidad). Es la primera métrica matemática de disenso aplicable a razonamiento clínico abierto.":
+        "A formal metric of diagnostic diversity defined as CDI = 1 − |det(M_sim)|, where M_sim is the cosine-similarity matrix of ensemble responses. It ranges from 0 (full convergence) to 1 (maximum diversity). It is the first mathematical metric of dissent applicable to open-ended clinical reasoning.",
+      "Voz Solista (SOLO)": "Solo Voice (SOLO)",
+      "El sistema identifica explícitamente el modelo m* con mínima similitud respecto al resto del coro y expone su respuesta completa como entidad clínica diferenciada. Operacionaliza el principio MEDLEY de preservación de minorías con un criterio de selección formal.":
+        "The system explicitly identifies the model m* with minimal similarity to the rest of the choir and surfaces its full response as a distinct clinical entity. It operationalizes the MEDLEY principle of minority preservation with a formal selection criterion.",
+      "Análisis léxico-semántico dual": "Dual lexical-semantic analysis",
+      "Dos capas paralelas: similitud TF-IDF (vocabulario) y embeddings semánticos (significado). Los pares con alta similitud léxica pero baja similitud semántica revelan modelos que usan las mismas palabras para hipótesis diagnósticas diferentes — una divergencia invisible al análisis convencional.":
+        "Two parallel layers: TF-IDF similarity (vocabulary) and semantic embeddings (meaning). Pairs with high lexical similarity but low semantic similarity reveal models that use the same words for different diagnostic hypotheses — a divergence invisible to conventional analysis.",
+
+      // ---- How it works ----
+      "Arquitectura · Cómo funciona": "Architecture · How it works",
+      "Cuatro fases. Un terapeuta": "Four phases. A therapist",
+      "en el": "at the",
+      "centro": "center",
+      "de todas ellas.": "of all of them.",
+      "CHORUS no reemplaza el juicio clínico: lo enriquece exponiéndole la incertidumbre estructural del ensemble antes de que sea disimulada por la síntesis.":
+        "CHORUS does not replace clinical judgment: it enriches it by exposing the structural uncertainty of the ensemble before it is concealed by synthesis.",
+      "Caso anonimizado": "Anonymized case",
+      "El terapeuta introduce una descripción textual libre del caso, previamente anonimizada según la plantilla del sistema.":
+        "The therapist enters a free-text description of the case, anonymized in advance according to the system template.",
+      "entrada": "input",
+      "N modelos heterogéneos": "N heterogeneous models",
+      "El Ensamblador dispara el mismo prompt a N LLMs en paralelo vía OpenRouter a temperatura 0.4. Respuestas independientes.":
+        "The Assembler dispatches the same prompt to N LLMs in parallel via OpenRouter at temperature 0.4. Independent responses.",
+      "ensemble": "ensemble",
+      "CDI + SOLO": "CDI + SOLO",
+      "El Analizador calcula la matriz de similitud, deriva el CDI y extrae la Voz Solista con su texto íntegro.":
+        "The Analyzer computes the similarity matrix, derives the CDI, and extracts the Solo Voice with its full text.",
+      "disenso": "dissent",
+      "Síntesis + deliberación": "Synthesis + deliberation",
+      "La Fusión integra las voces mayoritarias preservando los puntos de deliberación clínica. El terapeuta decide.":
+        "The Fusion integrates the majority voices while preserving the points of clinical deliberation. The therapist decides.",
+      "salida": "output",
+
+      // ---- Lineage ----
+      "Linaje · Genealogía conceptual": "Lineage · Conceptual genealogy",
+      "CHORUS y": "CHORUS and",
+      "MEDLEY": "MEDLEY",
+      ", dos caras del mismo principio.": ", two faces of the same principle.",
+      "dos caras del mismo principio.": "two faces of the same principle.",
+      "La tesis de que el disenso entre modelos es una señal clínica — no ruido a suprimir — nació en MEDLEY. CHORUS no la mejora: la adapta a un dominio estructuralmente distinto. Donde MEDLEY opera sobre diagnósticos codificables (ICD-10), CHORUS opera sobre formulaciones clínicas en texto libre. El cambio de dominio obliga al cambio de métrica. No hay jerarquía entre ambos — hay complementariedad.":
+        "The thesis that dissent between models is a clinical signal — not noise to suppress — was born in MEDLEY. CHORUS does not improve it: it adapts it to a structurally different domain. Where MEDLEY operates on codable diagnoses (ICD-10), CHORUS operates on clinical formulations in free text. The change of domain forces a change of metric. There is no hierarchy between the two — there is complementarity.",
+      "Karolinska Institutet · 2026": "Karolinska Institutet · 2026",
+      "Disenso en diagnóstico diferencial": "Dissent in differential diagnosis",
+      "Marco propuesto por Abtahi, Astaraki y Seoane. Orquesta múltiples LLMs sobre casos clínicos con diagnósticos codificables (ICD-10) y estratifica las respuestas por frecuencia de acuerdo: primary (≥30% de modelos), alternative (10–29%), minority (<10%). La minoría se preserva como hipótesis provisional para verificación del clínico.":
+        "Framework proposed by Abtahi, Astaraki, and Seoane. Orchestrates multiple LLMs over clinical cases with codable diagnoses (ICD-10) and stratifies responses by agreement frequency: primary (≥30% of models), alternative (10–29%), minority (<10%). The minority is preserved as a provisional hypothesis for clinician verification.",
+      "Dominio: diagnóstico con categorías canónicas": "Domain: diagnosis with canonical categories",
+      "Disenso medido como frecuencia de acuerdo": "Dissent measured as agreement frequency",
+      "Tres estratos: primary · alternative · minority": "Three strata: primary · alternative · minority",
+      "30+ LLMs sobre casos sintéticos": "30+ LLMs over synthetic cases",
+      "adaptación": "domain",
+      "de dominio": "adaptation",
+      "texto libre": "free text",
+      "InnoTep · UPM · 2026": "InnoTep · UPM · 2026",
+      "Disenso en formulación psicoterapéutica": "Dissent in psychotherapeutic formulation",
+      "Adaptación del paradigma MEDLEY a psicoterapia, donde las respuestas son formulaciones abiertas sin equivalente al ICD-10. La estratificación por frecuencia no aplica: CHORUS opera sobre representaciones vectoriales del texto completo. El Clinical Dissent Index mide diversidad geométrica en el espacio semántico; el SOLO expone la voz más distante.":
+        "Adaptation of the MEDLEY paradigm to psychotherapy, where responses are open formulations without an ICD-10 equivalent. Stratification by frequency does not apply: CHORUS operates on vector representations of the full text. The Clinical Dissent Index measures geometric diversity in semantic space; the SOLO surfaces the most distant voice.",
+      "Dominio: formulación clínica en texto libre": "Domain: clinical formulation in free text",
+      "Disenso medido como diversidad geométrica": "Dissent measured as geometric diversity",
+      "Análisis dual léxico-semántico (TF-IDF + embeddings)": "Dual lexical-semantic analysis (TF-IDF + embeddings)",
+      "Validación con terapeuta experto sobre casos reales": "Validation with an expert therapist over real cases",
+      "JMIR Mental Health, en revisión.": "JMIR Mental Health, under review.",
+      "Colaboración activa.": "Active collaboration.",
+      "Farhad Abtahi y Fernando Seoane, coautores originales de MEDLEY, firman también el paper de CHORUS. La relación entre los dos marcos no es una cita bibliográfica: es un trabajo conjunto sostenido entre el InnoTep Research Group de la UPM y el Department of Clinical Science del Karolinska Institutet, que explora cómo el mismo principio — preservar el disenso — toma formas distintas según el dominio clínico.":
+        "Farhad Abtahi and Fernando Seoane, original co-authors of MEDLEY, also sign the CHORUS paper. The relation between the two frameworks is not a bibliographic citation: it is sustained joint work between the InnoTep Research Group at UPM and the Department of Clinical Science at the Karolinska Institutet, exploring how the same principle — preserving dissent — takes different forms depending on the clinical domain.",
+      "Dónde aplica cada enfoque": "Where each approach applies",
+      "Sistema": "System",
+      "Tipo de respuesta": "Response type",
+      "Medición del disenso": "Dissent measurement",
+      "Dominio clínico": "Clinical domain",
+      "Validación": "Validation",
+      "Síntesis única": "Single synthesis",
+      "no aplica": "not applicable",
+      "Texto clínico general": "General clinical text",
+      "Rationale encadenado": "Chained rationale",
+      "Diagnóstico DSM-5": "DSM-5 diagnosis",
+      "sintético": "synthetic",
+      "Diagnósticos ICD-10": "ICD-10 diagnoses",
+      "Frecuencia de acuerdo": "Agreement frequency",
+      "Medicina general": "General medicine",
+      "Formulación en texto libre": "Free-text formulation",
+      "Diversidad geométrica": "Geometric diversity",
+      "Psicoterapia": "Psychotherapy",
+      "real · N=14": "real · N=14",
+      "MEDLEY y CHORUS aplican el mismo principio — disenso como señal — a respuestas de naturaleza distinta. La frecuencia de acuerdo es adecuada cuando las respuestas son categorías codificables; la diversidad geométrica lo es cuando las respuestas son textos abiertos sin ontología canónica. No son métricas rivales: son métricas para problemas distintos.":
+        "MEDLEY and CHORUS apply the same principle — dissent as signal — to responses of different nature. Agreement frequency is appropriate when responses are codable categories; geometric diversity is appropriate when responses are open texts without a canonical ontology. They are not rival metrics: they are metrics for different problems.",
+
+      // ---- Cases gallery ----
+      "Galería · Casos analizados": "Gallery · Analyzed cases",
+      "Explorar casos reales analizados": "Explore real cases analyzed",
+      "con": "with",
+      ".": ".",
+      "Casos anonimizados de psicoterapia individual, de pareja y familiar procesados por el sistema. Cada tarjeta muestra el Clinical Dissent Index resultante y permite explorar en detalle el mapa de consenso, la Voz Solista y la síntesis integrada.":
+        "Anonymized cases of individual, couple, and family psychotherapy processed by the system. Each card shows the resulting Clinical Dissent Index and lets you explore the consensus map, the Solo Voice, and the integrated synthesis in detail.",
+      "Filtrar": "Filter",
+      "Todos": "All",
+      "Individual": "Individual",
+      "Pareja": "Couple",
+      "Familia": "Family",
+      "CDI": "CDI",
+      "Bajo": "Low",
+      "Moderado": "Moderate",
+      "Alto": "High",
+      "Máximo": "Maximum",
+      "Caso 08 · Terapia familiar": "Case 08 · Family therapy",
+      "Paciente identificada adolescente con sintomatología difusa": "Identified patient: adolescent with diffuse symptomatology",
+      "Familia nuclear de cuatro miembros acude por problemas de comportamiento en la hija mayor. Dinámica parental rígida, hermano menor en rol de «niño invisible».":
+        "A nuclear family of four seeks help over behavioral issues in the elder daughter. Rigid parental dynamic, younger brother in the role of \u201cinvisible child.\u201d",
+      "máximo": "maximum",
+      "Caso 03 · Terapia de pareja": "Case 03 · Couple therapy",
+      "Crisis de pareja tras nacimiento del primer hijo": "Couple crisis after the birth of the first child",
+      "Pareja de 35-40 años consulta 8 meses después del parto. Descenso drástico de la intimidad; ella refiere agotamiento, él refiere desconexión emocional progresiva.":
+        "A 35-40 year-old couple consults 8 months postpartum. A drastic drop in intimacy; she reports exhaustion, he reports progressive emotional disconnection.",
+      "alto": "high",
+      "Caso 05 · Individual": "Case 05 · Individual",
+      "Ansiedad generalizada en profesional altamente cualificado": "Generalized anxiety in a highly qualified professional",
+      "Varón, 42 años, directivo. Síntomas físicos predominantes (taquicardia, insomnio de conciliación) sin disparador identificable. Sin antecedentes psiquiátricos previos.":
+        "Male, 42 years old, executive. Predominantly physical symptoms (tachycardia, sleep-onset insomnia) with no identifiable trigger. No prior psychiatric history.",
+      "moderado": "moderate",
+      "Caso 01 · Individual": "Case 01 · Individual",
+      "Duelo complicado tras pérdida parental": "Complicated grief after parental loss",
+      "Mujer, 51 años, consulta 14 meses tras fallecimiento de la madre. Imposibilidad para retomar rutina laboral, pensamientos intrusivos, evitación de lugares compartidos.":
+        "Woman, 51 years old, consults 14 months after her mother\u2019s death. Inability to resume work routine, intrusive thoughts, avoidance of shared places.",
+      "bajo": "low",
+      "Caso 07 · Individual": "Case 07 · Individual",
+      "Adolescente con autolesiones y dinámica familiar conflictiva": "Adolescent with self-harm and a conflictive family dynamic",
+      "Mujer, 16 años, acude derivada desde atención primaria. Autolesiones superficiales recientes. Convivencia con madre y pareja de madre; padre biológico ausente.":
+        "Female, 16 years old, referred from primary care. Recent superficial self-harm. Lives with her mother and her mother\u2019s partner; biological father absent.",
+      "Caso 04 · Terapia familiar": "Case 04 · Family therapy",
+      "Familia reconstituida con dificultades de integración": "Blended family with integration difficulties",
+      "Pareja con hijos previos de ambos. Convivencia de 2 años. Conflicto entre los hijos adolescentes de él y la hija pre-adolescente de ella. Parentalización visible.":
+        "A couple with prior children from both. Two years cohabiting. Conflict between his teenage sons and her preteen daughter. Visible parentification.",
+      "Caso 09 · próximamente": "Case 09 · coming soon",
+      "Caso 10 · próximamente": "Case 10 · coming soon",
+      "Tu propio caso": "Your own case",
+      "Analiza un caso clínico con CHORUS": "Analyze a clinical case with CHORUS",
+      "Introduce la descripción anonimizada de tu caso y recibe el mapa de consenso-disenso, el SOLO y la síntesis integrada en minutos.":
+        "Enter the anonymized description of your case and receive the consensus-dissent map, the SOLO, and the integrated synthesis in minutes.",
+      "Abrir analizador": "Open analyzer",
+
+      // ---- Modal labels ----
+      "Cerrar": "Close",
+      "Nivel": "Level",
+      "entropía H": "entropy H",
+      "Mapa de consenso-disenso": "Consensus-dissent map",
+      "Puntuación individual de cada modelo": "Individual score per model",
+      "Voz solista · perspectiva disidente": "Solo voice · dissenting perspective",
+      "modelo:": "model:",
+      "score:": "score:",
+      "mínimo del ensemble": "ensemble minimum",
+      "Lectura clínica:": "Clinical reading:",
+      "Síntesis integrada": "Integrated synthesis",
+      "Consenso del coro con preservación de deliberaciones": "Choir consensus with preserved deliberations",
+      "Puntos de deliberación clínica": "Points of clinical deliberation",
+      "Alta convergencia del ensemble. Hipótesis diagnóstica bien soportada.": "High ensemble convergence. Diagnostic hypothesis well supported.",
+      "Disenso sustancial. Caso complejo; evaluación independiente de la Voz Solista recomendada.": "Substantial dissent. Complex case; independent evaluation of the Solo Voice recommended.",
+      "Divergencia notable. Deliberación clínica recomendada antes de proceder.": "Notable divergence. Clinical deliberation recommended before proceeding.",
+      "Divergencia crítica. Máxima incertidumbre diagnóstica dentro del ensemble.": "Critical divergence. Maximum diagnostic uncertainty within the ensemble.",
+
+      // ---- Paper section ----
+      "Publicación · Research paper": "Publication · Research paper",
+      "El fundamento científico": "The scientific foundation",
+      "de": "of",
+      "El sistema se describe formalmente en un artículo de investigación enviado a JMIR Mental Health. El preprint estará disponible en arXiv en los próximos meses.":
+        "The system is formally described in a research article submitted to JMIR Mental Health. The preprint will be available on arXiv in the coming months.",
+      "JMIR Mental Health · En revisión": "JMIR Mental Health · Under review",
+      "Presentamos CHORUS, un sistema multi-LLM para apoyo al razonamiento clínico en psicoterapia que preserva el disenso del ensemble en lugar de suprimirlo mediante síntesis. Formalizamos el":
+        "We present CHORUS, a multi-LLM system for supporting clinical reasoning in psychotherapy that preserves ensemble dissent rather than suppressing it through synthesis. We formalize the",
+      "como medida escalar de diversidad diagnóstica y exponemos la": "as a scalar measure of diagnostic diversity and surface the",
+      "Voz Solista": "Solo Voice",
+      "como entidad clínica diferenciada.": "as a distinct clinical entity.",
+      "Preprint en arXiv": "Preprint on arXiv",
+      "arxiv.org / próximamente": "arxiv.org / coming soon",
+      "Artículo (JMIR Mental Health)": "Article (JMIR Mental Health)",
+      "en revisión · 2026": "under review · 2026",
+      "Código fuente": "Source code",
+      "github.com · MIT License": "github.com · MIT License",
+      "Citar este trabajo": "Cite this work",
+      "BibTeX · APA · Vancouver": "BibTeX · APA · Vancouver",
+
+      // ---- Team ----
+      "Equipo · Personas": "Team · People",
+      "Quienes están": "Who is",
+      "detrás": "behind",
+      "de CHORUS.": "CHORUS.",
+      "CHORUS es un proyecto del InnoTep Research Group de la Universidad Politécnica de Madrid, con colaboración clínica externa y vínculo conceptual con el Karolinska Institutet.":
+        "CHORUS is a project of the InnoTep Research Group at the Universidad Politécnica de Madrid, with external clinical collaboration and a conceptual link to the Karolinska Institutet.",
+      "Investigador principal": "Principal investigator",
+      "InnoTep · ETSIS Telecomunicación": "InnoTep · ETSIS Telecomunicación",
+      "Universidad Politécnica de Madrid": "Universidad Politécnica de Madrid",
+      "Validación clínica": "Clinical validation",
+      "Psicóloga clínica": "Clinical psychologist",
+      "Práctica privada, Guadalajara": "Private practice, Guadalajara",
+      "Co-investigador": "Co-investigator",
+      "Colaboración MEDLEY": "MEDLEY collaboration",
+      "Dept. Clinical Science": "Dept. Clinical Science",
+      "Karolinska Institutet": "Karolinska Institutet",
+
+      // ---- Analyzer modal ----
+      "Analizador · Tu propio caso": "Analyzer · Your own case",
+      "Antes de introducir un caso.": "Before entering a case.",
+      "El texto se transmitirá a APIs externas de terceros (OpenRouter, OpenAI) para su procesamiento. Confirma que el caso está anonimizado según la plantilla CHORUS antes de continuar. No introduzcas ningún identificador directo o indirecto del paciente.":
+        "The text will be transmitted to external third-party APIs (OpenRouter, OpenAI) for processing. Confirm that the case is anonymized according to the CHORUS template before continuing. Do not enter any direct or indirect identifier of the patient.",
+      "Descripción del caso (mín. 150 palabras)": "Case description (min. 150 words)",
+      "Describe el caso clínico en formato libre: motivo de consulta, datos demográficos anonimizados, antecedentes, dinámica familiar o relacional, síntomas, elementos de incertidumbre clínica...":
+        "Describe the clinical case in free format: presenting complaint, anonymized demographic data, history, family or relational dynamics, symptoms, elements of clinical uncertainty...",
+      "palabras · ": "words · ",
+      "mínimo 150": "minimum 150",
+      "anonimización verificada": "anonymization verified",
+      "Modelos del ensemble": "Ensemble models",
+      "Cancelar": "Cancel",
+      "Analizar caso": "Analyze case",
+
+      // ---- Footer ----
+      "Disenso como señal. Terapeuta en el centro.": "Dissent as signal. Therapist at the center.",
+      "Un proyecto del InnoTep Research Group.": "A project of the InnoTep Research Group.",
+      "Explorar": "Explore",
+      "El sistema": "The system",
+      "Galería de casos": "Case gallery",
+      "Recursos": "Resources",
+      "Documentación": "Documentation",
+      "Plantilla de anonimización": "Anonymization template",
+      "Protocolo de validación": "Validation protocol",
+      "ETSIS Telecomunicación": "ETSIS Telecomunicación",
+      "InnoTep Research Group": "InnoTep Research Group",
+      "© 2026 InnoTep · CHORUS. Código abierto bajo": "© 2026 InnoTep · CHORUS. Open source under",
+      "MIT License": "MIT License",
+      "próximamente": "coming soon"
+    };
+
+    // Aria-label translations (keyed identically)
+    const ARIA = {
+      "Navegación principal": "Main navigation",
+      "CHORUS · Inicio": "CHORUS · Home",
+      "Cinco modelos: cuatro voces en unísono (navy) y una en disenso (coral, SOLO)":
+        "Five models: four voices in unison (navy) and one in dissent (coral, SOLO)",
+      "Clinical Dissent Index": "Clinical Dissent Index",
+      "Cerrar": "Close",
+      "Switch language": "Cambiar idioma"
+    };
+
+    // Placeholder translations for textarea/inputs
+    const PLACEHOLDERS = {
+      "Describe el caso clínico en formato libre: motivo de consulta, datos demográficos anonimizados, antecedentes, dinámica familiar o relacional, síntomas, elementos de incertidumbre clínica...":
+        "Describe the clinical case in free format: presenting complaint, anonymized demographic data, history, family or relational dynamics, symptoms, elements of clinical uncertainty..."
+    };
+
+    // Alert message translations (used by the existing app code)
+    const MESSAGES_ES = {
+      minWords: "El caso debe tener al menos 150 palabras para un análisis significativo.",
+      minModels: "Selecciona al menos 3 modelos para formar un ensemble.",
+      analyzerStub: (n, w) => `El analizador real estará disponible cuando el endpoint público de CHORUS se despliegue.\n\nModelos seleccionados: ${n}\nPalabras del caso: ${w}\n\nPor ahora, explora los casos pre-analizados en la galería.`
+    };
+    const MESSAGES_EN = {
+      minWords: "The case must contain at least 150 words for meaningful analysis.",
+      minModels: "Select at least 3 models to form an ensemble.",
+      analyzerStub: (n, w) => `The real analyzer will be available when the public CHORUS endpoint is deployed.\n\nSelected models: ${n}\nCase words: ${w}\n\nFor now, explore the pre-analyzed cases in the gallery.`
+    };
+
+    // ----- Original-text snapshot ----------------------------------
+    // Walk all text nodes once and stash the original ES text on the node.
+    // Skip <script>, <style>, code blocks (we don't translate code).
+    const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'NOSCRIPT']);
+    const SKIP_SELECTOR = '[data-i18n-skip]';
+
+    function isSkippable(node) {
+      let p = node.parentNode;
+      while (p) {
+        if (p.nodeType === 1) {
+          if (SKIP_TAGS.has(p.tagName)) return true;
+          if (p.matches && p.matches(SKIP_SELECTOR)) return true;
+        }
+        p = p.parentNode;
+      }
+      return false;
+    }
+
+    function normalize(s) {
+      return s.replace(/\s+/g, ' ').trim();
+    }
+
+    function snapshotTextNodes(root) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(n) {
+          if (isSkippable(n)) return NodeFilter.FILTER_REJECT;
+          if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+      const nodes = [];
+      let n;
+      while ((n = walker.nextNode())) {
+        nodes.push(n);
+        // Stash original; preserve exact whitespace
+        if (!n.__es) n.__es = n.nodeValue;
+      }
+      return nodes;
+    }
+
+    function snapshotAttrs(root, attr, dict) {
+      // For elements with [attr], stash original value
+      root.querySelectorAll('[' + attr + ']').forEach(el => {
+        const v = el.getAttribute(attr);
+        if (!el.__attrs) el.__attrs = {};
+        if (!(attr in el.__attrs)) el.__attrs[attr] = v;
+      });
+    }
+
+    let textNodes = [];
+
+    function buildSnapshots() {
+      textNodes = snapshotTextNodes(document.body);
+      snapshotAttrs(document.body, 'aria-label');
+      snapshotAttrs(document.body, 'placeholder');
+      snapshotAttrs(document.body, 'aria-labelledby');
+    }
+
+    function applyLanguage(lang) {
+      const isEN = lang === 'en';
+      document.documentElement.lang = isEN ? 'en' : 'es';
+
+      // Translate text nodes
+      textNodes.forEach(n => {
+        const orig = n.__es;
+        if (!orig) return;
+        const key = normalize(orig);
+        if (isEN) {
+          if (T[key]) {
+            // Preserve leading/trailing whitespace from original
+            const lead = orig.match(/^\s*/)[0];
+            const trail = orig.match(/\s*$/)[0];
+            n.nodeValue = lead + T[key] + trail;
+          } else {
+            // Fallback: leave Spanish if not translated
+            n.nodeValue = orig;
+          }
+        } else {
+          n.nodeValue = orig;
+        }
+      });
+
+      // Translate aria-labels
+      document.querySelectorAll('[aria-label]').forEach(el => {
+        const orig = el.__attrs && el.__attrs['aria-label'];
+        if (!orig) return;
+        const key = normalize(orig);
+        if (isEN && ARIA[key]) {
+          el.setAttribute('aria-label', ARIA[key]);
+        } else {
+          el.setAttribute('aria-label', orig);
+        }
+      });
+
+      // Translate placeholders
+      document.querySelectorAll('[placeholder]').forEach(el => {
+        const orig = el.__attrs && el.__attrs['placeholder'];
+        if (!orig) return;
+        const key = normalize(orig);
+        if (isEN && PLACEHOLDERS[key]) {
+          el.setAttribute('placeholder', PLACEHOLDERS[key]);
+        } else {
+          el.setAttribute('placeholder', orig);
+        }
+      });
+
+      // Toggle button label: shows the OTHER language
+      const tgl = document.getElementById('lang-toggle');
+      if (tgl) tgl.textContent = isEN ? 'ES' : 'EN';
+
+      // Expose alert messages to the app
+      window.__I18N_MSG = isEN ? MESSAGES_EN : MESSAGES_ES;
+
+      // Update <title> + meta description
+      if (isEN) {
+        document.title = 'CHORUS — Clinical Heterogeneous Orchestration for Reasoning Under Supervision';
+      } else {
+        document.title = 'CHORUS — Clinical Heterogeneous Orchestration for Reasoning Under Supervision';
+      }
+
+      try { localStorage.setItem('chorus.lang', lang); } catch (e) {}
+    }
+
+    // Detect initial language: localStorage > browser > 'es'
+    function detectInitial() {
+      try {
+        const stored = localStorage.getItem('chorus.lang');
+        if (stored === 'en' || stored === 'es') return stored;
+      } catch (e) {}
+      const nav = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
+      if (nav.startsWith('es')) return 'es';
+      return 'en';
+    }
+
+    // Bootstrap
+    function init() {
+      buildSnapshots();
+      const initial = detectInitial();
+      // Default messages (so app code that runs before user toggles works)
+      window.__I18N_MSG = initial === 'en' ? MESSAGES_EN : MESSAGES_ES;
+      if (initial === 'en') applyLanguage('en');
+
+      // Toggle handler
+      const tgl = document.getElementById('lang-toggle');
+      if (tgl) {
+        tgl.addEventListener('click', (e) => {
+          e.preventDefault();
+          const cur = document.documentElement.lang === 'en' ? 'en' : 'es';
+          applyLanguage(cur === 'en' ? 'es' : 'en');
+        });
+      }
+
+      // Re-snapshot newly-rendered case modal content after openCaseModal,
+      // by patching the function to re-snapshot + re-apply when content
+      // is injected. We do this defensively after each open.
+      const origOpen = window.openCaseModal;
+      // We can't override here because the main script runs after us;
+      // instead, we listen to clicks on case cards and re-apply post-open.
+      document.querySelectorAll('.case-card[data-case]').forEach(card => {
+        card.addEventListener('click', () => {
+          // Wait one tick so the modal body is populated
+          setTimeout(() => {
+            // Re-snapshot only the modal body
+            const modalBody = document.getElementById('case-modal-body');
+            if (modalBody) {
+              const newNodes = snapshotTextNodes(modalBody);
+              // Append; old textNodes array still valid for the rest of the doc
+              textNodes = textNodes.concat(newNodes);
+              const cur = document.documentElement.lang === 'en' ? 'en' : 'es';
+              applyLanguage(cur);
+            }
+          }, 50);
+        });
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
 
   <!-- =============================================================
        JAVASCRIPT
@@ -2211,16 +3559,17 @@
       const text = document.getElementById('case-text').value.trim();
       const count = text ? text.split(/\s+/).length : 0;
       if (count < 150) {
-        alert('El caso debe tener al menos 150 palabras para un análisis significativo.');
+        alert((window.__I18N_MSG || {}).minWords || 'El caso debe tener al menos 150 palabras para un análisis significativo.');
         return;
       }
       const selectedModels = [...document.querySelectorAll('.model-pill.is-selected')].map(p => p.textContent);
       if (selectedModels.length < 3) {
-        alert('Selecciona al menos 3 modelos para formar un ensemble.');
+        alert((window.__I18N_MSG || {}).minModels || 'Selecciona al menos 3 modelos para formar un ensemble.');
         return;
       }
       // Placeholder: in production this would call the CHORUS API
-      alert(`El analizador real estará disponible cuando el endpoint público de CHORUS se despliegue.\n\nModelos seleccionados: ${selectedModels.length}\nPalabras del caso: ${count}\n\nPor ahora, explora los casos pre-analizados en la galería.`);
+      const stub = (window.__I18N_MSG || {}).analyzerStub;
+      alert(stub ? stub(selectedModels.length, count) : `El analizador real estará disponible cuando el endpoint público de CHORUS se despliegue.\n\nModelos seleccionados: ${selectedModels.length}\nPalabras del caso: ${count}\n\nPor ahora, explora los casos pre-analizados en la galería.`);
     }
   </script>
 
