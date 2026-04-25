@@ -53,3 +53,59 @@ Esto indica que **parte del CDI medido actualmente es disenso de longitud, no de
 Durante el smoke test inicial, los embeddings de OpenAI fallaron de forma transitoria y CHORUS cayó a TF-IDF léxico sin avisar al usuario. El meta.json sí lo registra (`embeddings.fallback_aplicado: true`, `matrices.principal: tfidf`), pero el frontend no lo señala visualmente.
 
 Pendiente de mejora: indicador visual claro en la web cuando se aplica fallback (sema en gris al lado del banner
+
+## Actualización 25 abril 2026 — Auditoría de catálogo y resolución de modelos thinking
+
+### Auditoría del catálogo gratis: volatilidad real
+
+En el primer barrido del catálogo gratis (smoke test), de los 5 modelos originales 3 dieron error en una sola sesión. Se hizo una auditoría más profunda con 12 candidatos adicionales: solo 4 respondieron limpiamente, y de esos 4 dos eran thinking. La conclusión:
+
+- **El listado `/v1/models` de OpenRouter no garantiza operatividad de los modelos gratis**. Los providers gratis tienen instancias volátiles, rate limits agresivos y caídas frecuentes.
+- **Solo 2 modelos gratis no-thinking respondieron en el momento de la auditoría**: `openai/gpt-oss-120b:free` y `google/gemma-4-26b-a4b-it:free`.
+- El catálogo final (4 modelos) incluye también `meta-llama/llama-3.3-70b-instruct:free` y `qwen/qwen3-next-80b-a3b-instruct:free`. Aunque estaban caídos en el momento de la auditoría, históricamente son las opciones más estables a medio plazo. Se asume que la disponibilidad fluctuará.
+
+Implicación operativa: la web pública debe asumir que en cualquier momento dado, una porción de los 4 modelos gratis puede estar caída. La gestión robusta vendrá con Issue 7 (detección de errores). Mientras tanto, un visitante que use modo gratis puede ver que solo 2 de 4 modelos responden — eso es esperable, no un fallo del sistema.
+
+### Solución a la simetría del catálogo PAY: gemini-2.5-flash-lite
+
+Eliminar `gemini-2.5-pro` por ser thinking dejaba el catálogo PAY asimétrico (3 OpenAI + 3 Anthropic + 1 Google). Se descubrió que `google/gemini-2.5-flash-lite` está vivo en OpenRouter y es no-thinking. Se incorporó como talla Small de Google, dejando `gemini-2.5-flash` como Mediano. El catálogo PAY queda así con 8 modelos en simetría perfecta:
+
+| Talla | OpenAI | Anthropic | Google |
+|---|---|---|---|
+| Small | gpt-4o-mini | claude-3.5-haiku | gemini-2.5-flash-lite |
+| Medium | gpt-4o | claude-sonnet-4.5 | gemini-2.5-flash |
+| Premium | gpt-4.1 | claude-opus-4.5 | (sin equivalente estable no-thinking) |
+
+Google no tiene actualmente un modelo Premium no-thinking estable equivalente a gpt-4.1 o claude-opus-4.5. Se acepta la asimetría y se documenta.
+
+### Heterogeneidad de longitud entre modelos no-thinking
+
+Aun entre modelos no-thinking, las longitudes de respuesta para el mismo prompt son notablemente distintas. Datos del primer smoke test sobre REF-001:
+
+- openai/gpt-4o: 2256 chars
+- anthropic/claude-sonnet-4.5: 3890 chars
+- google/gemini-2.5-pro (thinking, truncado): 375 chars
+
+En el test exploratorio sobre prompt corto:
+
+- openai/gpt-4o-mini: 1735 chars
+- openai/gpt-4o: 1549 chars
+- openai/gpt-4.1: 844 chars
+- anthropic/claude-3.5-haiku: 790 chars
+- anthropic/claude-sonnet-4.5: 996 chars
+- anthropic/claude-opus-4.5: 713 chars
+- google/gemini-2.5-flash: 1719 chars
+- openai/gpt-oss-120b:free: 5855 chars
+
+Patrón observado: **OpenAI tiende a respuestas más largas, Anthropic más concisas, Google variable, modelos OSS pueden ser muy verbosos**. Esto se traduce en que **una parte significativa del CDI medido actualmente es disenso de longitud y formato, no de contenido clínico**. La Issue 8 (system prompts del ensemble) es el principal mecanismo previsto para reducir este sesgo.
+
+### Decisión metodológica para el paper
+
+El paper de CHORUS debe declarar explícitamente:
+
+1. La fecha exacta del piloto y los IDs de modelos usados, con sus versiones según OpenRouter.
+2. La política "ensemble homogéneamente no-thinking" como decisión de diseño.
+3. La existencia del system prompt común (cuando esté implementado) y su versión.
+4. La aceptación de heterogeneidad residual de longitud entre laboratorios como limitación.
+
+Pendiente en el backlog: Issue 10 (snapshot de catálogo) cubre los puntos 1 y 4. Issue 8 (system prompts versionados) cubre el punto 3.
