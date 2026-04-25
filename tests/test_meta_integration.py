@@ -151,3 +151,12 @@ def test_endpoint_produce_meta_v1_valido(app_client):
     # Browser token presente (el cliente no tenía cookie, el backend la emitió).
     assert meta["browser_token"] is not None
     assert len(meta["browser_token"]) >= 16  # uuid4
+
+    # Sección embeddings presente y bien tipada. Sin OPENAI_API_KEY real
+    # en el entorno de test la API no responde, por lo que el pipeline
+    # cae a TF-IDF y `fallback_aplicado` debe ser True.
+    emb = meta["embeddings"]
+    assert isinstance(emb["modelo"], str) and emb["modelo"]
+    assert isinstance(emb["dimensiones"], int)
+    assert isinstance(emb["fallback_aplicado"], bool)
+    assert emb["fallback_aplicado"] is True

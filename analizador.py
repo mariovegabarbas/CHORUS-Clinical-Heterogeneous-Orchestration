@@ -78,6 +78,19 @@ def _matriz_tfidf(textos):
 
 EMBEDDING_MAX_CHARS = 8000
 
+# Modelo de embeddings configurable. Default `text-embedding-3-large`:
+# mejora discriminación semántica en textos clínicos largos respecto a
+# `text-embedding-3-small` a coste marginal.
+EMBEDDING_MODEL = os.environ.get("CHORUS_EMBEDDING_MODEL", "text-embedding-3-large")
+
+# Dimensiones nativas por modelo. Se persiste en el meta.json para
+# trazabilidad del análisis. Modelos no listados → 0 (desconocido).
+EMBEDDING_DIMENSIONS = {
+    "text-embedding-3-large": 3072,
+    "text-embedding-3-small": 1536,
+    "text-embedding-ada-002": 1536,
+}
+
 
 def _obtener_embeddings(textos):
     """Devuelve (vectores_or_None, truncated_flags).
@@ -96,7 +109,7 @@ def _obtener_embeddings(textos):
     try:
         url = "https://api.openai.com/v1/embeddings"
         headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
-        payload = {"model": "text-embedding-3-small",
+        payload = {"model": EMBEDDING_MODEL,
                    "input": [t[:EMBEDDING_MAX_CHARS] for t in textos]}
         resp = requests.post(url, json=payload, headers=headers, timeout=30)
         if resp.status_code == 200:

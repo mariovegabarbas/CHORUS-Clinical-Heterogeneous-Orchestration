@@ -75,7 +75,7 @@ def test_validar_rechaza_schema_version_incorrecta():
     [
         "schema_version", "case_uuid", "timestamp_utc", "timestamp_local",
         "prompt_sha256", "prompt_length_chars", "prompt_preview",
-        "ensemble", "determinismo", "fusion", "matrices",
+        "ensemble", "determinismo", "fusion", "matrices", "embeddings",
         "consensos_individuales", "chorus_version",
     ],
 )
@@ -83,6 +83,24 @@ def test_validar_rechaza_campos_top_ausentes(missing_field):
     meta = _meta_valido_minimo()
     del meta[missing_field]
     with pytest.raises(MetaValidationError, match=missing_field):
+        validar_meta(meta)
+
+
+@pytest.mark.parametrize(
+    "missing_subfield",
+    ["modelo", "dimensiones", "fallback_aplicado"],
+)
+def test_validar_rechaza_embeddings_subcampos_ausentes(missing_subfield):
+    meta = _meta_valido_minimo()
+    del meta["embeddings"][missing_subfield]
+    with pytest.raises(MetaValidationError, match=missing_subfield):
+        validar_meta(meta)
+
+
+def test_validar_rechaza_embeddings_tipo_incorrecto():
+    meta = _meta_valido_minimo()
+    meta["embeddings"]["dimensiones"] = "no soy int"
+    with pytest.raises(MetaValidationError, match="dimensiones"):
         validar_meta(meta)
 
 
