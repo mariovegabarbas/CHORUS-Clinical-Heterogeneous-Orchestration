@@ -1,21 +1,20 @@
 {
   "LLM": {
     "FREE_MODELS": [
-      {"name": "meta-llama/llama-3.3-70b-instruct:free",       "origin": "USA",   "organization": "Meta",    "size": "70B",  "flag": "🇺🇸"},
-      {"name": "google/gemma-3-27b-it:free",                   "origin": "USA",   "organization": "Google",  "size": "27B",  "flag": "🇺🇸"},
-      {"name": "nvidia/nemotron-3-super-120b-a12b:free",       "origin": "USA",   "organization": "NVIDIA",  "size": "120B", "flag": "🇺🇸"},
       {"name": "openai/gpt-oss-120b:free",                     "origin": "USA",   "organization": "OpenAI",  "size": "120B", "flag": "🇺🇸"},
+      {"name": "google/gemma-4-26b-a4b-it:free",               "origin": "USA",   "organization": "Google",  "size": "26B",  "flag": "🇺🇸"},
+      {"name": "meta-llama/llama-3.3-70b-instruct:free",       "origin": "USA",   "organization": "Meta",    "size": "70B",  "flag": "🇺🇸"},
       {"name": "qwen/qwen3-next-80b-a3b-instruct:free",        "origin": "China", "organization": "Alibaba", "size": "80B",  "flag": "🇨🇳"}
     ],
     "PAY_MODELS": [
-      {"name": "openai/gpt-4o-mini",          "origin": "USA", "organization": "OpenAI",    "size": "Small",   "flag": "🇺🇸"},
-      {"name": "openai/gpt-4o",               "origin": "USA", "organization": "OpenAI",    "size": "Mediano", "flag": "🇺🇸"},
-      {"name": "openai/gpt-4.1",              "origin": "USA", "organization": "OpenAI",    "size": "Large",   "flag": "🇺🇸"},
-      {"name": "anthropic/claude-3.5-haiku",  "origin": "USA", "organization": "Anthropic", "size": "Small",   "flag": "🇺🇸"},
-      {"name": "anthropic/claude-sonnet-4.5", "origin": "USA", "organization": "Anthropic", "size": "Mediano", "flag": "🇺🇸"},
-      {"name": "anthropic/claude-opus-4.5",   "origin": "USA", "organization": "Anthropic", "size": "Premium", "flag": "🇺🇸"},
-      {"name": "google/gemini-2.5-flash",     "origin": "USA", "organization": "Google",    "size": "Small",   "flag": "🇺🇸"},
-      {"name": "google/gemini-2.5-pro",       "origin": "USA", "organization": "Google",    "size": "Mediano", "flag": "🇺🇸"}
+      {"name": "openai/gpt-4o-mini",            "origin": "USA", "organization": "OpenAI",    "size": "Small",   "flag": "🇺🇸"},
+      {"name": "openai/gpt-4o",                 "origin": "USA", "organization": "OpenAI",    "size": "Mediano", "flag": "🇺🇸"},
+      {"name": "openai/gpt-4.1",                "origin": "USA", "organization": "OpenAI",    "size": "Large",   "flag": "🇺🇸"},
+      {"name": "anthropic/claude-3.5-haiku",    "origin": "USA", "organization": "Anthropic", "size": "Small",   "flag": "🇺🇸"},
+      {"name": "anthropic/claude-sonnet-4.5",   "origin": "USA", "organization": "Anthropic", "size": "Mediano", "flag": "🇺🇸"},
+      {"name": "anthropic/claude-opus-4.5",     "origin": "USA", "organization": "Anthropic", "size": "Premium", "flag": "🇺🇸"},
+      {"name": "google/gemini-2.5-flash-lite",  "origin": "USA", "organization": "Google",    "size": "Small",   "flag": "🇺🇸"},
+      {"name": "google/gemini-2.5-flash",       "origin": "USA", "organization": "Google",    "size": "Mediano", "flag": "🇺🇸"}
     ]
   },
   "TRANSFORMERS": {}
