@@ -152,3 +152,80 @@ Dos lecciones acumuladas:
 Una. **Los criterios de "respuestas válidas" estaban duplicados en backend y frontend con valores distintos** (frontend exigía 3, backend toleraba 2). Cuando un valor está duplicado en dos sitios, la divergencia silenciosa es solo cuestión de tiempo. Anotar como ítem para una limpieza futura: que la condición de fusión la decida solo el backend y que el frontend simplemente reporte qué encontró en el JSON.
 
 Dos. **El smoke test técnico (Issue 6) verificó que el meta.json se guardaba bien, pero no verificó que el contenido del meta.json fuera completo**. La fusión vacía pasó el filtro porque "técnicamente el JSON está bien formado". Para futuros smoke tests, conviene tener un script que valide no solo el schema sino la **completitud semántica** del payload: si un ensemble de 3 modelos válidos no produce fusión, eso es un fallo aunque el meta sea sintácticamente correcto. Posible Issue 13 hipotética: validador de completitud semántica del meta.json.
+
+## Cierre del smoke test grande — 25 abril 2026
+
+El smoke test grande se completó tras dos iteraciones (la primera contaminada por modelos retirados, gemini-2.5-pro thinking, y bug de fusión). El sistema, en su estado final, responde correctamente a los ocho criterios de validación previstos. A continuación se resumen las observaciones que el smoke ha dejado sobre el comportamiento real del sistema, que conviene tener presentes para Issues 7-12 y para el piloto.
+
+### Lo que el smoke confirma
+
+- **Pipeline técnico estable**: tres casos de referencia ejecutados sin errores, tres modelos respondiendo, embeddings activos, fusión generada, meta.json completo y atómico.
+- **Aislamiento de sesiones**: la cookie `chorus_browser_token` aísla historiales por navegador. Sin fugas entre sesiones.
+- **Trazabilidad longitudinal**: el `prompt_sha256` permanece estable entre reejecuciones del mismo caso de referencia, independientemente del catálogo de modelos, del estado de embeddings, o de cambios estructurales del sistema. Verificado con seis ejecuciones de REF-001 a lo largo de varias horas y dos catálogos distintos. Todas dieron el mismo hash. Es la propiedad básica que necesita la medida de D_JS longitudinal.
+
+### Patrón estilístico inter-laboratorio recurrente
+
+Las matrices de similitud de los tres casos muestran un patrón que no varía con la complejidad clínica:
+
+```
+Caso       gpt-4o↔claude   gpt-4o↔gemini   claude↔gemini
+REF-001    0.451           0.780           0.480
+REF-002    0.534           0.796           0.623
+REF-003    0.570           0.802           0.598
+```
+
+En los tres casos, gpt-4o y gemini-flash están sistemáticamente más cerca entre sí que cualquiera de ellos con claude-sonnet-4.5. La variación caso a caso es pequeña (≤0.15 en cualquier celda) comparada con la consistencia del patrón. Esto sugiere que el CDI medido actualmente captura disenso estilístico/formal entre laboratorios además del disenso clínico específico al caso.
+
+**Implicación para el programa**: Issue 8 (system prompts del ensemble) deja de ser opcional. Sin un system prompt común que homogeneice formato y estructura, los datos del piloto mezclan dos fuentes de variación que el paper no podrá separar.
+
+### Métricas del CDI: posibles redundancias
+
+Los tres casos del smoke producen los siguientes valores:
+
+```
+Caso       cdi_geometric   cdi_mean_dissent   cdi_entropy
+REF-001    0.405           0.158              1.792
+REF-002    0.361           0.136              1.791
+REF-003    0.385           0.145              1.792
+```
+
+Dos observaciones:
+
+- `cdi_geometric` y `cdi_mean_dissent` están perfectamente correlacionados en estos casos (mismo orden, escalado lineal). Una de las dos puede ser redundante.
+- `cdi_entropy` sale idéntica a tres decimales en los tres casos. La métrica posiblemente está saturada por la normalización por suma. Hay que revisarla.
+
+**Implicación**: tras Issue 8, conviene reevaluar el set de métricas. Es posible que con un system prompt común el rango de variación sea suficiente para que las métricas se diferencien, o puede ser señal de que la familia entera necesita repensarse. La decisión depende de los datos post-Issue 8.
+
+### El sistema no discriminó complejidad clínica como predijimos
+
+El programa diseñó los tres casos con expectativas de CDI ascendente: REF-001 (cuadro clásico) < REF-002 (ambigüedad de manual) < REF-003 (caso traumático complejo). El resultado real es:
+
+```
+REF-002: 0.361 (bajo)
+REF-003: 0.385 (intermedio)
+REF-001: 0.405 (alto)
+```
+
+El caso prototípico produce el CDI más alto. El rango total es estrecho (0.04). Combinado con el patrón estilístico recurrente, refuerza la hipótesis de que el CDI actual mide más estilo que contenido.
+
+No es un fallo del sistema. Es información sobre dónde estamos antes de Issue 8.
+
+### Truncamiento de embeddings: gemini-flash es verboso
+
+Gemini-flash produce respuestas notablemente más largas que los otros dos modelos del ensemble (entre 6800 y 9000 chars en los tres casos). En REF-002 superó el límite actual de 8000 chars del embedding, y la respuesta se truncó. El campo `embedding_truncated: true` en el meta.json registra la incidencia.
+
+Mejora prevista: subir `EMBEDDING_MAX_CHARS` a 16000 (o configurable por env var) y mostrar el flag de truncamiento en la UI cuando ocurra. Va al backlog.
+
+### Hallazgo trivial pero útil
+
+python-dotenv no encuentra el `.env` automáticamente cuando se ejecuta dentro de un heredoc bash. Workaround: pasar `dotenv_path=".env"` explícito.
+
+### Estado del sistema al cierre del smoke
+
+- 6 issues iniciales mergeadas.
+- PR de embeddings configurables mergeado.
+- PR de catálogo limpio (catalog-fix-thinking-and-free) mergeado.
+- PR de fusión en ensembles pequeños (fusion-fix-small-ensembles) mergeado.
+- 65 tests verdes.
+
+El sistema está estable y listo para abordar las Issues 7 (detección de errores) y 8 (system prompts versionados). Ambas se identifican durante el smoke como necesarias antes del piloto.
