@@ -297,10 +297,14 @@ CHORUS/
 **Variables de entorno requeridas:**
 
 ```
-OPENAI_API_KEY            — Fusión (GPT-3.5-turbo) y embeddings semánticos
-OPENROUTER_API_KEY        — Ensemble de modelos heterogéneos
-CHORUS_OUTPUT_PATH        — (opcional) Ruta de salida de resultados. Por defecto: resultados/
-CHORUS_EMBEDDING_MODEL    — (opcional) Modelo de embeddings. Por defecto: text-embedding-3-large
+OPENAI_API_KEY              — Fusión (GPT-3.5-turbo) y embeddings semánticos
+OPENROUTER_API_KEY          — Ensemble de modelos heterogéneos
+CHORUS_OUTPUT_PATH          — (opcional) Ruta de salida de resultados. Por defecto: resultados/
+CHORUS_EMBEDDING_MODEL      — (opcional) Modelo de embeddings. Por defecto: text-embedding-3-large
+CHORUS_EMBEDDING_MAX_CHARS  — (opcional) Límite de caracteres por respuesta antes del embedding.
+                              Respuestas más largas se truncan al inicio. Default: 16000.
+                              text-embedding-3-large tolera hasta ~32000 chars; subir más allá
+                              de 16000 si se trabaja con respuestas habitualmente largas.
 ```
 
 ---

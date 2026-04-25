@@ -76,7 +76,10 @@ def _matriz_tfidf(textos):
 
 # ── Capa 2: Embeddings OpenAI ────────────────────────────────────────────────
 
-EMBEDDING_MAX_CHARS = 8000
+# Configurable por env var. Default 16000 (subido desde 8000 tras el smoke
+# test grande del 25 abril 2026: gemini-2.5-flash truncaba sistemáticamente).
+# text-embedding-3-large tolera hasta ~32000 chars sin problema.
+EMBEDDING_MAX_CHARS = int(os.environ.get("CHORUS_EMBEDDING_MAX_CHARS", "16000"))
 
 # Modelo de embeddings configurable. Default `text-embedding-3-large`:
 # mejora discriminación semántica en textos clínicos largos respecto a

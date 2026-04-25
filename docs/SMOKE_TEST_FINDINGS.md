@@ -216,6 +216,8 @@ Gemini-flash produce respuestas notablemente más largas que los otros dos model
 
 Mejora prevista: subir `EMBEDDING_MAX_CHARS` a 16000 (o configurable por env var) y mostrar el flag de truncamiento en la UI cuando ocurra. Va al backlog.
 
+**Resuelto el 25 de abril de 2026**: el límite por defecto se subió a 16000 chars (configurable por env var `CHORUS_EMBEDDING_MAX_CHARS`). text-embedding-3-large tolera hasta ~32000 chars sin problema. El flag `embedding_truncated` en el meta.json sigue activo para casos que superen el nuevo límite.
+
 ### Hallazgo trivial pero útil
 
 python-dotenv no encuentra el `.env` automáticamente cuando se ejecuta dentro de un heredoc bash. Workaround: pasar `dotenv_path=".env"` explícito.
