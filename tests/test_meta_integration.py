@@ -87,13 +87,19 @@ def app_client(tmp_path, monkeypatch):
     monkeypatch.setenv("CHORUS_OUTPUT_PATH", str(tmp_path))
     # Recargar app.py para que tome el env var del tmp_path.
     for mod in list(sys.modules.keys()):
-        if mod in ("app", "Ensambladores.ensamblador_LLM", "schemas", "schemas.meta_v1"):
+        if mod in ("app", "Ensambladores.ensamblador_LLM", "schemas", "schemas.meta_v1", "analizador"):
             del sys.modules[mod]
     import Ensambladores.ensamblador_LLM as ens_mod
     monkeypatch.setattr(ens_mod, "Ensamblador", _FakeEnsamblador)
     import app as app_module
     # También en el namespace de app (import ya ejecutado dentro del módulo).
     monkeypatch.setattr(app_module, "Ensamblador", _FakeEnsamblador)
+    # Anular llamadas reales a OpenAI (embeddings + fusión) para que los
+    # asserts sobre fallback_aplicado y la sección fusion sean
+    # deterministas: load_dotenv reinyecta OPENAI_API_KEY desde .env al
+    # importar analizador, así que limpiamos la global del módulo.
+    import analizador
+    monkeypatch.setattr(analizador, "API_KEY", "")
     app_module.app.testing = True
     return app_module, app_module.app.test_client(), tmp_path
 

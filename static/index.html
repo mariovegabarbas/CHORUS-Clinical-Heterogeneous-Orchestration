@@ -1089,7 +1089,7 @@ function renderFusion(data) {
         <div class="fusion-text">${escHtml(fusionText)}</div>
       </div>`;
   } else {
-    cont.innerHTML = `<p style="color:var(--muted);font-size:0.88rem">Se necesitan al menos 3 respuestas válidas para generar la síntesis clínica.</p>`;
+    cont.innerHTML = `<p style="color:var(--muted);font-size:0.88rem">No se ha generado síntesis clínica. Esto puede ocurrir si la fusión con el modelo síntesis ha fallado.</p>`;
   }
 }
 

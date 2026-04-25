@@ -437,13 +437,20 @@ async def dataAnalisis_interno(resultados_ensamblador):
         solo_voz = identificar_solo(consensos_ind, validos)
         divergencia = calcular_divergencia_capas(m_tfidf, m_embed)
 
-        n_top = max(1, len(consensos_ind) * 2 // 3)
-        mayores = consensos_ind[:n_top]
-        respuesta_mc = consensos_ind[0] if consensos_ind else None
+        # Para ensembles pequeños (<=4 modelos) usamos todos para fusión.
+        # Para ensembles mayores filtramos outliers quedándonos con los 2/3 más consensuados.
+        if len(consensos_ind) <= 4:
+            mayores = list(consensos_ind)
+        else:
+            n_top = max(3, len(consensos_ind) * 2 // 3)
+            mayores = consensos_ind[:n_top]
 
+        respuesta_mc = consensos_ind[0] if consensos_ind else None
         fusionada, modelos_base, fusion_latency_ms = None, [], None
-        if len(mayores) >= 3:
-            top3 = mayores[:3]
+
+        # La fusión necesita al menos 2 respuestas válidas (consistente con el resto del módulo).
+        if len(mayores) >= 2:
+            top3 = mayores[:3]  # como mucho 3 entran a fusion
             top3_datos = []
             for c in top3:
                 for r in validos:
