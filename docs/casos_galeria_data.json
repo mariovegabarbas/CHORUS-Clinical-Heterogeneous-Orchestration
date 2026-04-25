@@ -1,0 +1,234 @@
+{
+  "schema_version": "1.0",
+  "fecha_captura": "2026-04-25",
+  "chorus_version": "876e0f52ad6dac4a332aff7da687fb5985b90903",
+  "ensemble_usado": [
+    "openai/gpt-4o",
+    "anthropic/claude-sonnet-4.5",
+    "google/gemini-2.5-flash"
+  ],
+  "casos": [
+    {
+      "ref_id": "REF-001",
+      "titulo": "Depresión moderada con ideación pasiva",
+      "descripcion_corta": "Varón 28 años, episodio depresivo mayor, sin plan suicida activo.",
+      "tipo": "individual",
+      "cdi_geometric": 0.3652,
+      "cdi_mean_dissent": 0.1375,
+      "cdi_entropy": 1.7914,
+      "nivel": "moderada",
+      "consenso_global": 0.8625,
+      "matriz_similitud": [
+        [
+          0.9999999999999994,
+          0.8310145664773285,
+          0.8787787354495807
+        ],
+        [
+          0.8310145664773285,
+          0.9999999999999999,
+          0.8777310726030386
+        ],
+        [
+          0.8787787354495807,
+          0.8777310726030386,
+          1.0000000000000002
+        ]
+      ],
+      "modelos": [
+        {
+          "name": "openai/gpt-4o",
+          "length_chars": 2155,
+          "latency_ms": 6357
+        },
+        {
+          "name": "anthropic/claude-sonnet-4.5",
+          "length_chars": 3805,
+          "latency_ms": 23668
+        },
+        {
+          "name": "google/gemini-2.5-flash",
+          "length_chars": 8122,
+          "latency_ms": 13085
+        }
+      ],
+      "solo": {
+        "modelo": "anthropic/claude-sonnet-4.5",
+        "consenso_individual": 0.8544,
+        "respuesta_preview_300": "# Evaluación Clínica del Caso\n\n## Orientación Diagnóstica\n\n### Diagnóstico Principal: **EPISODIO DEPRESIVO MAYOR (Moderado-Grave)**\n\n**Criterios cumplidos según DSM-5/CIE-11:**\n\n✓ **Síntomas cardinales (≥2 semanas, presente 4 meses):**\n- Ánimo deprimido persistente\n- Anhedonia marcada\n\n✓ **Síntomas "
+      },
+      "respuesta_fusionada_completa": "# Síntesis Clínica del Caso\n\n## Orientación Diagnóstica\n\n### Diagnóstico Principal: **Episodio Depresivo Mayor (Moderado-Grave)**\n\n**Criterios cumplidos según DSM-5/CIE-11:**\n- **Síntomas cardinales (≥2 semanas, presente 4 meses):**\n  - Ánimo deprimido persistente\n  - Anhedonia marcada\n- **Síntomas adicionales:**\n  - Insomnio (de mantenimiento)\n  - Pérdida de apetito y peso significativa (5 kg)\n  - Fatiga/pérdida de energía\n  - Dificultades de concentración (deterioro en el rendimiento laboral)\n  - Ideación suicida pasiva\n- **Deterioro funcional:** Confirmado por terceros, afectando el rendimiento laboral.\n- **Gravedad:** Moderada-Grave (por número de síntomas, deterioro funcional e ideación suicida).\n\n## Evaluación de Riesgo\n\n### **Riesgo Suicida: BAJO-MODERADO**\n- Ideación pasiva presente, sin plan estructurado ni intención actual.\n- Sin acceso a métodos letales, pero requiere monitorización estrecha.\n\n## Recomendaciones de Manejo Inicial\n\n### **1. Medidas Inmediatas**\n- **Evaluación complementaria necesaria:**\n  - Analítica completa: hemograma, bioquímica, función tiroidea (TSH, T4), vitamina B12, vitamina D.\n  - Descartar causas orgánicas (hipotiroidismo, anemia, etc.).\n  - Exploración de factores desencadenantes/estresores vitales.\n- **Psicoeducación:**\n  - Explicar la naturaleza del trastorno depresivo, normalizar síntomas y enfatizar el buen pronóstico con tratamiento.\n  - Involucrar a la pareja como apoyo.\n\n### **2. Plan de Seguridad**\n- Contacto telefónico de emergencia (024 - Línea de atención a la conducta suicida).\n- Instrucciones claras sobre cuándo acudir a urgencias.\n- Reforzar la red de apoyo familiar/pareja.\n- Seguimiento estrecho inicial (semanal).\n\n### **3. Tratamiento Farmacológico**\n- **Primera línea - ISRS:**\n  - **Opción preferente:** Sertralina 50 mg/día (aumentar a 100 mg tras 1-2 semanas según tolerancia).\n  - Alternativas: Escitalopram 10-20 mg/día, Fluoxetina 20 mg/día.\n  - Consideraciones: Informar sobre latencia terapéutica (2-4 semanas) y monitorizar ideación suicida, especialmente en las primeras semanas.\n  - **Tratamiento sintomático temporal:** Trazodona 25-50 mg nocturna para insomnio (primeras semanas), evitando benzodiacepinas.\n\n### **4. Intervención Psicoterapéutica**\n- **Recomendación:** Terapia Cognitivo-Conductual (TCC).\n  - Combinación con farmacoterapia = mejor resultado.\n  - Frecuencia: semanal inicialmente, duración mínima de 12-16 sesiones.\n  - Objetivos terapéuticos: reestructuración cognitiva, activación conductual y prevención de recaídas.\n\n### **5. Medidas Generales**\n- **Higiene del sueño:** Establecer rutinas regulares.\n- **Actividad física regular:** 30 min/día, efecto antidepresivo.\n- **Estructura diaria/rutinas.**\n- **Evitar alcohol.**\n- **Baja laboral temporal:** Considerar según evolución y deterioro funcional significativo.\n\n## Seguimiento\n### **Cronograma:**\n1. **Semana 1-2:** Presencial (valorar tolerancia, adherencia, riesgo).\n2. **Semana 4:** Evaluar respuesta inicial.\n3. **Semana 8-12:** Valorar respuesta completa (reducción ≥50% síntomas).\n4. **Mensual:** Tras estabilización.\n\n### **Criterios de derivación urgente:**\n- Ideación suicida activa con plan.\n- Síntomas psicóticos.\n- Deterioro funcional grave.\n- No respuesta tras 2 ensayos farmacológicos adecuados.\n\n## Pronóstico\n**Favorable con tratamiento adecuado:**\n- 60-70% respuesta a primer antidepresivo.\n- Combinación fármaco + psicoterapia: mejores resultados.\n- Primer episodio: buen pronóstico.\n- Importancia de adherencia y seguimiento.\n\n## Puntos de Deliberación Clínica\n- **Diagnóstico Diferencial:**\n  - **Trastorno Depresivo Persistente (Distimia):** Aunque el cuadro es más agudo y severo, la cronicidad de 4 meses podría solaparse con la definición.\n  - **Trastorno de Adaptación con Ánimo Deprimido:** No se menciona un estresor identificable claro.\n  - **Trastorno Bipolar:** El paciente niega síntomas maníacos o hipomaníacos.\n  - **Depresión Secundaria a Condición Médica General:** Requiere evaluación médica completa.\n  - **Depresión Inducida por Sustancias/Medicamentos:** Aunque el paciente niega consumo, es importante indagar sobre medicamentos que puedan causar síntomas depresivos.\n\nEsta síntesis clínica integra las recomendaciones y consideraciones de las tres perspectivas, priorizando la seguridad del paciente y un manejo integral del episodio depresivo mayor.",
+      "prompt_sha256": "73d04128448ba422f245061e04997e42ced4e84716176384d19fff7770537b18",
+      "consensos_individuales": [
+        {
+          "name": "openai/gpt-4o",
+          "consenso_individual": 0.8549,
+          "solo": false
+        },
+        {
+          "name": "anthropic/claude-sonnet-4.5",
+          "consenso_individual": 0.8544,
+          "solo": true
+        },
+        {
+          "name": "google/gemini-2.5-flash",
+          "consenso_individual": 0.8783,
+          "solo": false
+        }
+      ],
+      "divergencia_capas": {
+        "distancia_frobenius": 0.9162,
+        "n_pares_criticos": 0,
+        "descripcion": "Coherencia entre capas lexica y semantica."
+      }
+    },
+    {
+      "ref_id": "REF-002",
+      "titulo": "Ansiedad generalizada vs trastorno adaptativo",
+      "descripcion_corta": "Mujer 42 años, síntomas ansiosos tras reestructuración laboral reciente.",
+      "tipo": "individual",
+      "cdi_geometric": 0.3995,
+      "cdi_mean_dissent": 0.1568,
+      "cdi_entropy": 1.7915,
+      "nivel": "moderada",
+      "consenso_global": 0.8432,
+      "matriz_similitud": [
+        [
+          0.9999999999999998,
+          0.8220040604128456,
+          0.836818018646842
+        ],
+        [
+          0.8220040604128456,
+          1.0,
+          0.8707710035932434
+        ],
+        [
+          0.836818018646842,
+          0.8707710035932434,
+          0.9999999999999998
+        ]
+      ],
+      "modelos": [
+        {
+          "name": "openai/gpt-4o",
+          "length_chars": 1266,
+          "latency_ms": 4192
+        },
+        {
+          "name": "anthropic/claude-sonnet-4.5",
+          "length_chars": 4545,
+          "latency_ms": 27341
+        },
+        {
+          "name": "google/gemini-2.5-flash",
+          "length_chars": 6534,
+          "latency_ms": 11670
+        }
+      ],
+      "solo": {
+        "modelo": "openai/gpt-4o",
+        "consenso_individual": 0.8294,
+        "respuesta_preview_300": "La situación que describes es comprensible dado el contexto de incertidumbre laboral que enfrenta la paciente. Sin embargo, los síntomas que presenta, como la preocupación excesiva y difícil de controlar, la tensión muscular, las dificultades de concentración, la irritabilidad y la alteración del su"
+      },
+      "respuesta_fusionada_completa": "# Síntesis Clínica Multi-Perspectiva\n\n## Análisis del Caso Clínico\n\n### Contexto y Síntomas Presentes\nLa paciente presenta síntomas de ansiedad en respuesta a una reestructuración laboral significativa. Los síntomas incluyen:\n- Preocupación excesiva y difícil de controlar.\n- Tensión muscular.\n- Dificultades de concentración.\n- Irritabilidad.\n- Alteración del sueño.\n\nEstos síntomas han persistido durante 3 meses, lo que sugiere una respuesta que podría ser más que una reacción normal al estrés.\n\n### Impacto Funcional\nA pesar de que la paciente mantiene su funcionamiento laboral y social, reporta un \"coste subjetivo alto\", indicando un sufrimiento interno significativo.\n\n### Diagnóstico Diferencial\n1. **Trastorno de Ansiedad Generalizada (TAG)**: \n   - Presencia de síntomas compatibles, aunque no cumple estrictamente con el criterio de duración de 6 meses del DSM-5.\n   - Malestar clínicamente significativo y dificultad para controlar la preocupación.\n   \n2. **Trastorno de Adaptación con Ansiedad**: \n   - Posible, dado el estresor identificable, pero la intensidad y número de síntomas sugieren que el TAG es más probable.\n\n3. **Ansiedad no especificada**: \n   - Si no se cumplen todos los criterios para un diagnóstico específico, pero el malestar es clínicamente significativo.\n\n### Respuesta a la Pregunta de la Paciente\n- **¿Es normal dado el contexto?**\n  - Sí, en parte. La ansiedad es una respuesta humana normal ante la incertidumbre laboral. Sin embargo, la intensidad y duración de los síntomas sugieren que ha cruzado el umbral hacia un trastorno que merece atención clínica.\n\n- **¿Requiere tratamiento?**\n  - Sí, la paciente probablemente se beneficiaría de intervención, dado el sufrimiento significativo y la afectación en su calidad de vida.\n\n## Plan Terapéutico Recomendado\n\n### 1. Abordaje Psicoterapéutico\n- **Terapia Cognitivo-Conductual (TCC)**: \n  - Eficaz para el TAG, con un enfoque en la reestructuración cognitiva, técnicas de relajación y entrenamiento en resolución de problemas.\n  - Duración sugerida: 12-16 sesiones.\n\n### 2. Tratamiento Farmacológico\n- Considerar el uso de ISRS (ej. Escitalopram, Sertralina) si los síntomas son intensos o la respuesta a la psicoterapia es insuficiente.\n- Benzodiacepinas pueden ser consideradas a corto plazo si la ansiedad es muy incapacitante.\n\n### 3. Intervenciones Complementarias\n- Psicoeducación sobre TAG y su tratamiento.\n- Ejercicio físico regular y técnicas de mindfulness.\n- Higiene del sueño.\n\n## Puntos de Deliberación Clínica\n- **Diagnóstico**: Existe una divergencia en la interpretación del diagnóstico. Mientras que la mayoría de las perspectivas sugieren TAG, una de ellas considera el Trastorno de Adaptación con Ansiedad como una opción viable. Esto se debe a la duración de 3 meses y la presencia de un estresor identificable.\n- **Intervención**: Hay consenso en la necesidad de intervención, pero las perspectivas difieren en la urgencia y la combinación de tratamientos (psicoterapia vs. farmacoterapia).\n\n## Mensaje Clave para la Paciente\n*\"Lo que está experimentando es una reacción comprensible a una situación estresante, pero la intensidad y el impacto en su bienestar sugieren que se beneficiaría de ayuda. No es una señal de debilidad, sino una oportunidad para aprender a manejar esta ansiedad y mejorar su calidad de vida.\"*",
+      "prompt_sha256": "1058b22b416a82695be6a32f99e38361438eb0f716f44d0b7d6787300dc3ec18",
+      "consensos_individuales": [
+        {
+          "name": "openai/gpt-4o",
+          "consenso_individual": 0.8294,
+          "solo": true
+        },
+        {
+          "name": "anthropic/claude-sonnet-4.5",
+          "consenso_individual": 0.8464,
+          "solo": false
+        },
+        {
+          "name": "google/gemini-2.5-flash",
+          "consenso_individual": 0.8538,
+          "solo": false
+        }
+      ],
+      "divergencia_capas": {
+        "distancia_frobenius": 0.5422,
+        "n_pares_criticos": 0,
+        "descripcion": "Coherencia entre capas lexica y semantica."
+      }
+    },
+    {
+      "ref_id": "REF-003",
+      "titulo": "Caso complejo: síntomas mixtos con componente traumático",
+      "descripcion_corta": "Mujer 34 años, síntomas intrusivos, hiperreactividad autonómica y evitación.",
+      "tipo": "individual",
+      "cdi_geometric": 0.3283,
+      "cdi_mean_dissent": 0.1164,
+      "cdi_entropy": 1.7915,
+      "nivel": "moderada",
+      "consenso_global": 0.8836,
+      "matriz_similitud": [
+        [
+          0.9999999999999998,
+          0.8588792052511435,
+          0.8861596599637758
+        ],
+        [
+          0.8588792052511435,
+          0.9999999999999997,
+          0.905818705896734
+        ],
+        [
+          0.8861596599637758,
+          0.905818705896734,
+          1.0000000000000002
+        ]
+      ],
+      "modelos": [
+        {
+          "name": "openai/gpt-4o",
+          "length_chars": 2446,
+          "latency_ms": 6632
+        },
+        {
+          "name": "anthropic/claude-sonnet-4.5",
+          "length_chars": 4093,
+          "latency_ms": 26118
+        },
+        {
+          "name": "google/gemini-2.5-flash",
+          "length_chars": 8030,
+          "latency_ms": 13119
+        }
+      ],
+      "solo": {
+        "modelo": "openai/gpt-4o",
+        "consenso_individual": 0.8725,
+        "respuesta_preview_300": "La descripción de los síntomas y antecedentes de esta mujer sugiere un cuadro compatible con Trastorno de Estrés Postraumático (TEPT), asociado al accidente de tráfico grave que experimentó. Los síntomas incluyen pesadillas recurrentes, flashbacks, hiperreactividad autonómica, evitación de situacion"
+      },
+      "respuesta_fusionada_completa": "# Síntesis Clínica Multi-Perspectiva\n\n## Diagnóstico Principal Sospechado\n**Trastorno de Estrés Postraumático (TEPT) Crónico** (CIE-10: F43.1)  \nLos síntomas incluyen:\n- Evento traumático: accidente grave con muerte de un acompañante.\n- Reexperimentación: pesadillas y flashbacks recurrentes (>6 meses).\n- Hiperactivación: hiperreactividad autonómica ante estímulos relacionados.\n- Evitación: activa de conducir y hablar del evento.\n- Alteraciones cognitivas/emocionales: culpa intensa, ánimo bajo.\n- Síntomas disociativos ocasionales.\n- Deterioro funcional: crisis laboral.\n\n## Diagnósticos Comórbidos Sospechados\n1. **Trastorno Depresivo Mayor**: síntomas de ánimo bajo y culpa intensa.\n2. **Trastorno por Consumo de Alcohol (TCA)**: uso creciente de alcohol como automedicación.\n3. **Duelo Complicado/Prolongado**: dificultad para procesar la pérdida del acompañante.\n\n## Factores de Riesgo y Protección\n### Factores de Riesgo:\n- Consumo creciente de alcohol.\n- Falta de red de apoyo.\n- Desesperanza y aislamiento social.\n- Resistencia previa al tratamiento.\n\n### Factores de Protección:\n- Aceptación actual de la evaluación.\n- Ausencia de ideación autolítica activa.\n\n## Plan de Intervención\n\n### Fase 1: Evaluación Detallada y Estabilización\n1. **Evaluación Psiquiátrica Completa**:\n   - Historia clínica detallada y evaluación de riesgo suicida.\n   - Evaluación del consumo de alcohol y su impacto.\n   - Exploración psicopatológica de síntomas de TEPT y depresión.\n\n2. **Establecimiento de Vínculo Terapéutico**:\n   - Validar el sufrimiento y normalizar la reacción ante el trauma.\n   - Abordar la resistencia inicial con empatía.\n\n3. **Psicoeducación Inicial**:\n   - Explicar el TEPT y el impacto del trauma.\n   - Normalizar la culpa y el duelo.\n\n4. **Manejo de la Crisis y Estabilización**:\n   - Evaluar riesgo suicida y establecer un plan de seguridad.\n   - Abordar el consumo de alcohol y establecer objetivos de reducción.\n   - Implementar higiene del sueño.\n\n### Fase 2: Tratamiento Específico del TEPT y Comorbilidades\n1. **Psicoterapia**:\n   - Terapia Cognitivo-Conductual Focalizada en el Trauma (TCC-T).\n   - Terapia de Procesamiento Cognitivo (TPC) y EMDR.\n   - Intervención para el duelo complicado.\n\n2. **Tratamiento Farmacológico**:\n   - ISRS (Sertralina o Paroxetina) para TEPT y depresión.\n   - Prazosina para pesadillas y síntomas de hiperactivación.\n   - Evitar benzodiacepinas debido al riesgo de dependencia.\n\n3. **Abordaje del Consumo de Alcohol**:\n   - Terapia Cognitivo-Conductual para el TCA.\n   - Entrevista motivacional y grupos de apoyo.\n\n### Fase 3: Rehabilitación y Prevención de Recaídas\n1. **Reestructuración Cognitiva**: Trabajar en creencias de culpa y desesperanza.\n2. **Desarrollo de Habilidades de Afrontamiento**: Técnicas de relajación y mindfulness.\n3. **Fortalecimiento de la Red de Apoyo**: Reconectar con familiares o grupos de apoyo.\n4. **Reintegración Social y Laboral**: Ayudar a retomar actividades significativas.\n5. **Plan de Prevención de Recaídas**: Identificar señales de alarma y estrategias de afrontamiento.\n6. **Seguimiento a Largo Plazo**: Monitorear síntomas y bienestar general.\n\n## Puntos de Deliberación Clínica\n- **Diagnósticos Comórbidos**: Existe consenso en la identificación del TEPT, pero hay divergencias en la consideración del trastorno depresivo como secundario o comórbido. La evaluación del TCA también varía en su enfoque y necesidad de intervención.\n- **Intervención Psicoterapéutica**: Las perspectivas sugieren diferentes enfoques terapéuticos (TCC-T, TPC, EMDR), lo que puede depender de la disposición de la paciente para aceptar tratamiento psicológico.\n- **Manejo del Consumo de Alcohol**: La necesidad de intervención específica para el TCA es un punto de discusión, dado el riesgo de dependencia y la interacción con el TEPT.\n\n## Mensaje Clave para la Paciente\n*\"Lo que está experimentando es una respuesta normal a un evento anormal. El TEPT es tratable, pero requiere tiempo y un abordaje integral. El alcohol, aunque parezca ayudar temporalmente, empeora los síntomas a medio plazo. Vamos a trabajar juntos para que recupere el control de su vida.\"*",
+      "prompt_sha256": "a0e1a4d717ad81b47ed092d7538fccc1ea6663b829b00ed7a1ca32c97af2ea91",
+      "consensos_individuales": [
+        {
+          "name": "openai/gpt-4o",
+          "consenso_individual": 0.8725,
+          "solo": true
+        },
+        {
+          "name": "anthropic/claude-sonnet-4.5",
+          "consenso_individual": 0.8823,
+          "solo": false
+        },
+        {
+          "name": "google/gemini-2.5-flash",
+          "consenso_individual": 0.896,
+          "solo": false
+        }
+      ],
+      "divergencia_capas": {
+        "distancia_frobenius": 0.4298,
+        "n_pares_criticos": 0,
+        "descripcion": "Coherencia entre capas lexica y semantica."
+      }
+    }
+  ]
+}
