@@ -48,7 +48,7 @@ def _load_reference_cases():
 REFERENCE_CASES = _load_reference_cases()
 
 try:
-    from analizador import dataAnalisis
+    from analizador import dataAnalisis, EMBEDDING_MODEL, EMBEDDING_DIMENSIONS
     from Ensambladores.ensamblador_LLM import Ensamblador
     from schemas.meta_v1 import (
         SCHEMA_VERSION,
@@ -304,6 +304,12 @@ def _construir_meta(*, filename_base, prompt, model_type, modelos_solicitados,
         "tfidf": _matriz_a_lista(m_tfidf),
         "embed": _matriz_a_lista(m_embed),
         "principal": "embed" if m_embed is not None else "tfidf",
+    }
+
+    meta["embeddings"] = {
+        "modelo": EMBEDDING_MODEL,
+        "dimensiones": EMBEDDING_DIMENSIONS.get(EMBEDDING_MODEL, 0),
+        "fallback_aplicado": not reporte.get("embedding_disponible", False),
     }
 
     meta["cdi"] = reporte.get("cdi")

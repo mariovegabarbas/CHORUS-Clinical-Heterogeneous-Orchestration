@@ -43,6 +43,7 @@ _REQUIRED_TOP = {
     "determinismo": dict,
     "fusion": dict,
     "matrices": dict,
+    "embeddings": dict,
     "cdi": (dict, type(None)),
     "solo": (dict, type(None)),
     "divergencia_capas": (dict, type(None)),
@@ -84,6 +85,12 @@ _REQUIRED_MATRICES = {
     "tfidf": (list, type(None)),
     "embed": (list, type(None)),
     "principal": str,
+}
+
+_REQUIRED_EMBEDDINGS = {
+    "modelo": str,
+    "dimensiones": int,
+    "fallback_aplicado": bool,
 }
 
 
@@ -129,6 +136,7 @@ def validar_meta(payload: Any) -> None:
     _check(payload["determinismo"], _REQUIRED_DETERMINISMO, "meta.determinismo")
     _check(payload["fusion"], _REQUIRED_FUSION, "meta.fusion")
     _check(payload["matrices"], _REQUIRED_MATRICES, "meta.matrices")
+    _check(payload["embeddings"], _REQUIRED_EMBEDDINGS, "meta.embeddings")
 
     if payload["matrices"]["principal"] not in ("tfidf", "embed"):
         raise MetaValidationError(
@@ -175,6 +183,11 @@ def construir_meta_base() -> dict:
             "tfidf": None,
             "embed": None,
             "principal": "tfidf",
+        },
+        "embeddings": {
+            "modelo": "text-embedding-3-large",
+            "dimensiones": 3072,
+            "fallback_aplicado": False,
         },
         "cdi": None,
         "solo": None,

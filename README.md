@@ -64,7 +64,7 @@ Esta filosofía se fundamenta en el trabajo **MEDLEY** (Abtahi, Astaraki & Seoan
 │                                                                 │
 │  ┌─────────────────────────┐   ┌─────────────────────────────┐  │
 │  │  Similitud TF-IDF        │   │  Similitud semántica        │  │
-│  │  (scikit-learn)          │   │  (text-embedding-3-small)   │  │
+│  │  (scikit-learn)          │   │  (text-embedding-3-large)   │  │
 │  │  Capa léxica             │   │  Capa semántica             │  │
 │  └───────────┬─────────────┘   └─────────────┬───────────────┘  │
 │              └──────────────┬─────────────────┘                 │
@@ -159,6 +159,8 @@ La única excepción es el caso degenerado en el que **todos** los modelos son m
 
 La divergencia entre la matriz léxica (TF-IDF) y la semántica (embeddings) actúa como detector de un fenómeno de especial relevancia clínica: modelos que emplean el mismo vocabulario técnico para describir fenómenos distintos, o modelos que difieren en terminología pero coinciden en la estructura conceptual del diagnóstico.
 
+**Modelo de embeddings configurable.** El modelo de embeddings que alimenta la capa semántica se configura mediante la variable de entorno `CHORUS_EMBEDDING_MODEL`. El **default es `text-embedding-3-large`** (3072 dimensiones), elegido por su mayor discriminación semántica en textos clínicos largos respecto a `text-embedding-3-small` a coste marginal. El modelo concreto que se usó en cada ejecución, su dimensionalidad y si hubo fallback (TF-IDF puro por fallo de la API) quedan registrados en el campo `embeddings` del `meta.json` v1.0.
+
 ### Trazabilidad del análisis (schema meta.json v1.0)
 
 Cada ejecución produce dos ficheros en `resultados/`:
@@ -174,7 +176,7 @@ Cada ejecución produce dos ficheros en `resultados/`:
 
 Esto saca a la demo pública del perímetro RGPD de forma limpia. Bajo el campo de entrada del caso en la web se muestra un aviso explícito de este comportamiento.
 
-**Campos del schema v1.0** (extracto): `schema_version`, `case_uuid`, `case_reference_id`, `session_code`, `browser_token`, `timestamp_utc`/`timestamp_local`, `ensemble.{n_modelos, model_type, modelos[]}` con latencia y `api_error` por modelo, `determinismo.{temperature, seed, nota}`, `fusion.{modelo, latency_ms, max_tokens, temperature}`, `matrices.{tfidf, embed, principal}`, `cdi`, `solo`, `divergencia_capas`, `consenso_global`, `consensos_individuales`, `respuesta_fusionada_sha256`, `chorus_version` (hash del commit en ejecución). La definición y validador están en `schemas/meta_v1.py`; cualquier payload sin todos los campos obligatorios o con tipos incorrectos se rechaza con `MetaValidationError`.
+**Campos del schema v1.0** (extracto): `schema_version`, `case_uuid`, `case_reference_id`, `session_code`, `browser_token`, `timestamp_utc`/`timestamp_local`, `ensemble.{n_modelos, model_type, modelos[]}` con latencia y `api_error` por modelo, `determinismo.{temperature, seed, nota}`, `fusion.{modelo, latency_ms, max_tokens, temperature}`, `matrices.{tfidf, embed, principal}`, `embeddings.{modelo, dimensiones, fallback_aplicado}`, `cdi`, `solo`, `divergencia_capas`, `consenso_global`, `consensos_individuales`, `respuesta_fusionada_sha256`, `chorus_version` (hash del commit en ejecución). La definición y validador están en `schemas/meta_v1.py`; cualquier payload sin todos los campos obligatorios o con tipos incorrectos se rechaza con `MetaValidationError`.
 
 **Versionado.** Los `meta.json` producidos antes del schema v1.0 no se migran automáticamente; se consideran legacy. Futuras versiones del schema subirán la `schema_version` y deberán migrarse de forma explícita.
 
@@ -287,7 +289,7 @@ CHORUS/
 | **Orquestación** | Python 3.11, asyncio, aiohttp |
 | **Backend web** | Flask, Flask-CORS |
 | **Análisis léxico** | scikit-learn (TF-IDF + cosine similarity) |
-| **Análisis semántico** | OpenAI `text-embedding-3-small` |
+| **Análisis semántico** | OpenAI `text-embedding-3-large` (configurable vía `CHORUS_EMBEDDING_MODEL`) |
 | **Fusión** | OpenAI `gpt-3.5-turbo` |
 | **Acceso a modelos** | OpenRouter API (400+ modelos) |
 | **Frontend** | HTML5 / CSS3 / JavaScript vanilla |
@@ -295,9 +297,10 @@ CHORUS/
 **Variables de entorno requeridas:**
 
 ```
-OPENAI_API_KEY        — Fusión (GPT-3.5-turbo) y embeddings semánticos
-OPENROUTER_API_KEY    — Ensemble de modelos heterogéneos
-CHORUS_OUTPUT_PATH    — (opcional) Ruta de salida de resultados. Por defecto: resultados/
+OPENAI_API_KEY            — Fusión (GPT-3.5-turbo) y embeddings semánticos
+OPENROUTER_API_KEY        — Ensemble de modelos heterogéneos
+CHORUS_OUTPUT_PATH        — (opcional) Ruta de salida de resultados. Por defecto: resultados/
+CHORUS_EMBEDDING_MODEL    — (opcional) Modelo de embeddings. Por defecto: text-embedding-3-large
 ```
 
 ---
